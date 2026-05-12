@@ -11,7 +11,7 @@ export const Welcome = () => (
           href="https://marmelab.com/atomic-crm"
           className="underline hover:no-underline"
         >
-          Atomic CRM
+          Chairside
         </a>{" "}
         is a template designed to help you quickly build your own CRM.
       </p>
@@ -27,7 +27,7 @@ export const Welcome = () => (
         >
           shadcn-admin-kit
         </a>
-        , Atomic CRM is fully open-source. You can find the code at{" "}
+        , Chairside is fully open-source. You can find the code at{" "}
         <a
           href="https://github.com/marmelab/atomic-crm"
           className="underline hover:no-underline"
