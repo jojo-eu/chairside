@@ -5,7 +5,7 @@ import { buildContact, StoryWrapper } from "@/test/StoryWrapper";
 import type { DataProvider } from "ra-core";
 
 const meta = {
-  title: "Atomic CRM/Contacts/Contact Create",
+  title: "Chairside/Contacts/Contact Create",
   parameters: {
     layout: "fullscreen",
   },
