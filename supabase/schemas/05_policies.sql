@@ -11,6 +11,9 @@ alter table public.services enable row level security;
 alter table public.clinic_closures enable row level security;
 alter table public.appointments enable row level security;
 alter table public.chairside_activity_log enable row level security;
+alter table public.reminders enable row level security;
+alter table public.messages enable row level security;
+alter table public.opt_outs enable row level security;
 alter table public.companies enable row level security;
 alter table public.contacts enable row level security;
 alter table public.contact_notes enable row level security;
@@ -42,6 +45,15 @@ create policy "Clinic members can view appointments in their clinics" on public.
 
 -- Chairside Activity Log
 create policy "Clinic members can view Chairside activity in their clinics" on public.chairside_activity_log for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Reminders
+create policy "Clinic members can view reminders in their clinics" on public.reminders for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Messages
+create policy "Clinic members can view messages in their clinics" on public.messages for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Opt Outs
+create policy "Clinic members can view opt outs in their clinics" on public.opt_outs for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);

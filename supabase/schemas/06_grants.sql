@@ -98,6 +98,18 @@ grant all on table public.chairside_activity_log to anon;
 grant all on table public.chairside_activity_log to authenticated;
 grant all on table public.chairside_activity_log to service_role;
 
+grant all on table public.reminders to anon;
+grant all on table public.reminders to authenticated;
+grant all on table public.reminders to service_role;
+
+grant all on table public.messages to anon;
+grant all on table public.messages to authenticated;
+grant all on table public.messages to service_role;
+
+grant all on table public.opt_outs to anon;
+grant all on table public.opt_outs to authenticated;
+grant all on table public.opt_outs to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
