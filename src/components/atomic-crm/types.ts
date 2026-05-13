@@ -124,6 +124,44 @@ export type Patient = {
   created_by?: Identifier | null;
 } & Pick<RaRecord, "id">;
 
+export type Service = {
+  clinic_id: Identifier;
+  name: string;
+  duration_minutes: number;
+  buffer_minutes: number;
+  color: string;
+  description?: string | null;
+  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;
+
+export type Appointment = {
+  clinic_id: Identifier;
+  patient_id: Identifier;
+  service_id: Identifier;
+  starts_at: string;
+  ends_at: string;
+  status:
+    | "scheduled"
+    | "reminder_sent"
+    | "confirmed"
+    | "cancelled"
+    | "needs_reschedule"
+    | "completed"
+    | "no_show";
+  source: "manual" | "ai_voice" | "ai_sms" | "imported";
+  created_at: string;
+  updated_at: string;
+  created_by?: Identifier | null;
+  confirmed_at?: string | null;
+  cancelled_at?: string | null;
+  cancel_reason?: string | null;
+  notes?: string | null;
+  patient_notes?: string | null;
+} & Pick<RaRecord, "id">;
+
 export type ContactNote = {
   contact_id: Identifier;
   text: string;

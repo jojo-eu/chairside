@@ -209,6 +209,25 @@ export const englishCrmMessages = {
         do_not_contact: "Nekontaktovať",
       },
     },
+    services: {
+      name: "Služba |||| Služby",
+      forcedCaseName: "Služba",
+      fields: {
+        name: "Služba",
+      },
+    },
+    appointments: {
+      name: "Termín |||| Termíny",
+      forcedCaseName: "Termín",
+      fields: {
+        patient_id: "Pacient",
+        service_id: "Služba",
+        starts_at: "Začiatok",
+        ends_at: "Koniec",
+        status: "Stav",
+        source: "Zdroj",
+      },
+    },
     deals: {
       name: "Deal |||| Deals",
       fields: {

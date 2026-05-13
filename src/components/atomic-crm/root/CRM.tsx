@@ -16,6 +16,7 @@ import { SetPasswordPage } from "@/components/supabase/set-password-page";
 import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 
 import companies from "../companies";
+import appointments from "../appointments";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
@@ -65,7 +66,6 @@ const defaultStore = localStorageStore(undefined, "CRM");
 
 const mvpPlaceholderRoutes = [
   { path: "/calendar", title: "Kalendár" },
-  { path: "/appointments", title: "Termíny" },
   { path: "/reminders", title: "Pripomienky" },
   { path: "/calls", title: "Hovory" },
 ];
@@ -282,6 +282,8 @@ const DesktopAdmin = (
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="patients" {...patients} />
+      <Resource name="services" recordRepresentation={(record) => record.name} />
+      <Resource name="appointments" {...appointments} />
       <Resource name="contacts" {...contacts} />
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
@@ -357,6 +359,8 @@ const MobileAdmin = (
           list={patients.list}
           recordRepresentation={patients.recordRepresentation}
         />
+        <Resource name="services" recordRepresentation={(record) => record.name} />
+        <Resource name="appointments" {...appointments} />
         <Resource name="contacts" show={ContactShow}>
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
         </Resource>
