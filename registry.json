@@ -206,6 +206,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/reminders/index.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/reminders/ReminderList.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/providers/types.ts",
           "type": "registry:component"
         },
