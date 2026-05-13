@@ -810,6 +810,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/appointments/index.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/appointments/AppointmentList.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/activity/ActivityLogNote.tsx",
           "type": "registry:component"
         },
