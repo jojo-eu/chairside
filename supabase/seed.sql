@@ -200,6 +200,7 @@ BEGIN
     DELETE FROM public.reminders WHERE clinic_id = v_clinic_id;
     DELETE FROM public.opt_outs WHERE clinic_id = v_clinic_id;
     DELETE FROM public.chairside_activity_log WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.call_logs WHERE clinic_id = v_clinic_id;
     DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
     DELETE FROM public.clinic_closures WHERE clinic_id = v_clinic_id;
     DELETE FROM public.services WHERE clinic_id = v_clinic_id;
@@ -276,6 +277,141 @@ BEGIN
     SELECT id INTO v_appointment_petra FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_petra AND starts_at = '2026-05-21 11:00:00+00';
     SELECT id INTO v_appointment_tomas FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_tomas AND starts_at = '2026-05-22 09:30:00+00';
     SELECT id INTO v_appointment_anna FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_anna AND starts_at = '2026-05-25 06:30:00+00';
+
+    INSERT INTO public.call_logs (
+        clinic_id,
+        patient_id,
+        appointment_id,
+        direction,
+        phone,
+        provider,
+        provider_call_id,
+        status,
+        outcome,
+        started_at,
+        ended_at,
+        duration_seconds,
+        transcript,
+        summary,
+        metadata,
+        needs_review,
+        created_at
+    )
+    VALUES
+        (
+            v_clinic_id,
+            v_patient_lucia,
+            v_appointment_lucia,
+            'inbound',
+            '+421917333444',
+            'vapi',
+            'test-call-lucia-booked',
+            'completed',
+            'booked',
+            '2026-05-19 07:31:00+00',
+            '2026-05-19 07:35:20+00',
+            260,
+            'Pacientka volá kvôli dentálnej hygiene. AI overila dostupnosť a ponúkla termín 20. mája o 10:00.',
+            'AI recepcia rezervovala dentálnu hygienu pre Luciu Novotnú.',
+            jsonb_build_object('local_seed', true, 'workflow_id', 'test-workflow-booking', 'language', 'sk'),
+            false,
+            '2026-05-19 07:35:20+00'
+        ),
+        (
+            v_clinic_id,
+            v_patient_tomas,
+            v_appointment_tomas,
+            'inbound',
+            '+420606777888',
+            'vapi',
+            'test-call-tomas-reschedule',
+            'completed',
+            'needs_reschedule',
+            '2026-05-19 09:01:00+00',
+            '2026-05-19 09:05:10+00',
+            250,
+            'Pacient žiada presunúť termín extrakcie, ale nevie potvrdiť nový čas.',
+            'Tomáš Svoboda potrebuje presunúť termín. Vyžaduje kontrolu recepcie.',
+            jsonb_build_object('local_seed', true, 'workflow_id', 'test-workflow-reschedule', 'language', 'cs'),
+            true,
+            '2026-05-19 09:05:10+00'
+        ),
+        (
+            v_clinic_id,
+            null,
+            null,
+            'inbound',
+            '+421902000111',
+            'vapi',
+            'test-call-unknown-missed',
+            'missed',
+            'unknown',
+            '2026-05-19 11:12:00+00',
+            null,
+            null,
+            null,
+            'Zmeškaný testovací hovor z neznámeho čísla.',
+            jsonb_build_object('local_seed', true, 'caller_known', false),
+            true,
+            '2026-05-19 11:12:00+00'
+        ),
+        (
+            v_clinic_id,
+            v_patient_anna,
+            null,
+            'outbound',
+            '+421903222333',
+            'vapi',
+            'test-call-anna-failed',
+            'failed',
+            'failed',
+            '2026-05-19 12:00:00+00',
+            '2026-05-19 12:00:18+00',
+            18,
+            null,
+            'Testovací odchádzajúci hovor zlyhal počas spojenia.',
+            jsonb_build_object('local_seed', true, 'failure_reason', 'Test provider connection failure'),
+            true,
+            '2026-05-19 12:00:18+00'
+        ),
+        (
+            v_clinic_id,
+            v_patient_martin,
+            null,
+            'inbound',
+            '+421905111222',
+            'vapi',
+            'test-call-martin-question',
+            'completed',
+            'answered_question',
+            '2026-05-19 13:20:00+00',
+            '2026-05-19 13:22:05+00',
+            125,
+            'Pacient sa pýta na parkovanie a ordinačné hodiny. AI poskytla informácie bez zmeny termínu.',
+            'Martin Kováč dostal odpoveď na praktickú otázku, bez ďalšej akcie.',
+            jsonb_build_object('local_seed', true, 'topic', 'opening_hours_and_parking'),
+            false,
+            '2026-05-19 13:22:05+00'
+        ),
+        (
+            v_clinic_id,
+            v_patient_petra,
+            null,
+            'inbound',
+            '+421948555666',
+            'vapi',
+            'test-call-petra-no-action',
+            'completed',
+            'no_action',
+            '2026-05-19 14:10:00+00',
+            '2026-05-19 14:11:40+00',
+            100,
+            'Pacientka si overila adresu kliniky a rozhodla sa zavolať neskôr.',
+            'Informačný hovor bez rezervácie alebo zmeny termínu.',
+            jsonb_build_object('local_seed', true, 'topic', 'clinic_address'),
+            false,
+            '2026-05-19 14:11:40+00'
+        );
 
     INSERT INTO public.reminders (
         clinic_id,
