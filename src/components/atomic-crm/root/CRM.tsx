@@ -20,6 +20,7 @@ import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
+import patients from "../patients";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
 import { SignupPage } from "../login/SignupPage";
@@ -56,7 +57,6 @@ import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nPr
 import { StartPage } from "../login/StartPage.tsx";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
-import { ContactListMobile } from "../contacts/ContactList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
 import { CompanyShow } from "../companies/CompanyShow.tsx";
 import { NoteShowPage } from "../notes/NoteShowPage.tsx";
@@ -281,6 +281,7 @@ const DesktopAdmin = (
         ))}
       </CustomRoutes>
       <Resource name="deals" {...deals} />
+      <Resource name="patients" {...patients} />
       <Resource name="contacts" {...contacts} />
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
@@ -352,11 +353,11 @@ const MobileAdmin = (
           ))}
         </CustomRoutes>
         <Resource
-          name="contacts"
-          list={ContactListMobile}
-          show={ContactShow}
-          recordRepresentation={contacts.recordRepresentation}
-        >
+          name="patients"
+          list={patients.list}
+          recordRepresentation={patients.recordRepresentation}
+        />
+        <Resource name="contacts" show={ContactShow}>
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
         </Resource>
         <Resource name="companies" show={CompanyShow} />

@@ -198,6 +198,17 @@ export const englishCrmMessages = {
         title: "Prioritní pacienti",
       },
     },
+    patients: {
+      name: "Pacient |||| Pacienti",
+      forcedCaseName: "Pacient",
+      fields: {
+        first_name: "Meno",
+        last_name: "Priezvisko",
+        phone: "Telefón",
+        last_visit_at: "Posledná návšteva",
+        do_not_contact: "Nekontaktovať",
+      },
+    },
     deals: {
       name: "Deal |||| Deals",
       fields: {

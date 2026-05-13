@@ -21,8 +21,8 @@ export const MobileNavigation = () => {
   let currentPath: string | boolean = "/";
   if (matchPath("/", location.pathname)) {
     currentPath = "/";
-  } else if (matchPath("/contacts/*", location.pathname)) {
-    currentPath = "/contacts";
+  } else if (matchPath("/patients/*", location.pathname)) {
+    currentPath = "/patients";
   } else if (matchPath("/reminders/*", location.pathname)) {
     currentPath = "/reminders";
   } else {
@@ -57,10 +57,10 @@ export const MobileNavigation = () => {
             isActive={currentPath === "/"}
           />
           <NavigationButton
-            href="/contacts"
+            href="/patients"
             Icon={Users}
             label={translate("crm.navigation.patients")}
-            isActive={currentPath === "/contacts"}
+            isActive={currentPath === "/patients"}
           />
           <CreateButton />
           <NavigationButton

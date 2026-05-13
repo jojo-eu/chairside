@@ -102,6 +102,28 @@ export type Contact = {
   company_name?: string;
 } & Pick<RaRecord, "id">;
 
+export type Patient = {
+  clinic_id: Identifier;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email?: string | null;
+  date_of_birth?: string | null;
+  language: string;
+  notes?: string | null;
+  tags: string[];
+  last_visit_at?: string | null;
+  do_not_contact: boolean;
+  do_not_contact_reason?: string | null;
+  consent_given_at?: string | null;
+  consent_source?: string | null;
+  data_retention_until?: string | null;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: Identifier | null;
+} & Pick<RaRecord, "id">;
+
 export type ContactNote = {
   contact_id: Identifier;
   text: string;

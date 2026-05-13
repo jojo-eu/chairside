@@ -18,8 +18,8 @@ const Header = () => {
   let currentPath: string | boolean = "/";
   if (matchPath("/", location.pathname)) {
     currentPath = "/";
-  } else if (matchPath("/contacts/*", location.pathname)) {
-    currentPath = "/contacts";
+  } else if (matchPath("/patients/*", location.pathname)) {
+    currentPath = "/patients";
   } else if (matchPath("/calendar/*", location.pathname)) {
     currentPath = "/calendar";
   } else if (matchPath("/appointments/*", location.pathname)) {
@@ -63,8 +63,8 @@ const Header = () => {
                   />
                   <NavigationTab
                     label={translate("crm.navigation.patients")}
-                    to="/contacts"
-                    isActive={currentPath === "/contacts"}
+                    to="/patients"
+                    isActive={currentPath === "/patients"}
                   />
                   <NavigationTab
                     label="Kalendár"
