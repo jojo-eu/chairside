@@ -20,6 +20,14 @@ const Header = () => {
     currentPath = "/";
   } else if (matchPath("/contacts/*", location.pathname)) {
     currentPath = "/contacts";
+  } else if (matchPath("/calendar/*", location.pathname)) {
+    currentPath = "/calendar";
+  } else if (matchPath("/appointments/*", location.pathname)) {
+    currentPath = "/appointments";
+  } else if (matchPath("/reminders/*", location.pathname)) {
+    currentPath = "/reminders";
+  } else if (matchPath("/calls/*", location.pathname)) {
+    currentPath = "/calls";
   } else {
     currentPath = false;
   }
@@ -57,6 +65,26 @@ const Header = () => {
                     label={translate("crm.navigation.patients")}
                     to="/contacts"
                     isActive={currentPath === "/contacts"}
+                  />
+                  <NavigationTab
+                    label="Kalendár"
+                    to="/calendar"
+                    isActive={currentPath === "/calendar"}
+                  />
+                  <NavigationTab
+                    label="Termíny"
+                    to="/appointments"
+                    isActive={currentPath === "/appointments"}
+                  />
+                  <NavigationTab
+                    label={translate("crm.navigation.reminders")}
+                    to="/reminders"
+                    isActive={currentPath === "/reminders"}
+                  />
+                  <NavigationTab
+                    label="Hovory"
+                    to="/calls"
+                    isActive={currentPath === "/calls"}
                   />
                 </nav>
               </div>

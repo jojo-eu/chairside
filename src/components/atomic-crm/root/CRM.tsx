@@ -26,6 +26,7 @@ import { SignupPage } from "../login/SignupPage";
 import { ConfirmationRequired } from "../login/ConfirmationRequired";
 import { ImportPage } from "../misc/ImportPage";
 import { ChangelogPage } from "../misc/ChangelogPage";
+import { MvpPlaceholderPage } from "../misc/MvpPlaceholderPage";
 import {
   getAuthProvider as defaultAuthProviderBuilder,
   getDataProvider as defaultDataProviderBuilder,
@@ -61,6 +62,13 @@ import { CompanyShow } from "../companies/CompanyShow.tsx";
 import { NoteShowPage } from "../notes/NoteShowPage.tsx";
 
 const defaultStore = localStorageStore(undefined, "CRM");
+
+const mvpPlaceholderRoutes = [
+  { path: "/calendar", title: "Kalendár" },
+  { path: "/appointments", title: "Termíny" },
+  { path: "/reminders", title: "Pripomienky" },
+  { path: "/calls", title: "Hovory" },
+];
 
 export type CRMProps = {
   dataProvider?: CrmDataProvider;
@@ -264,6 +272,13 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+        {mvpPlaceholderRoutes.map(({ path, title }) => (
+          <Route
+            key={path}
+            path={path}
+            element={<MvpPlaceholderPage title={title} />}
+          />
+        ))}
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="contacts" {...contacts} />
@@ -328,6 +343,13 @@ const MobileAdmin = (
             element={<SettingsPageMobile />}
           />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+          {mvpPlaceholderRoutes.map(({ path, title }) => (
+            <Route
+              key={path}
+              path={path}
+              element={<MvpPlaceholderPage title={title} />}
+            />
+          ))}
         </CustomRoutes>
         <Resource
           name="contacts"
