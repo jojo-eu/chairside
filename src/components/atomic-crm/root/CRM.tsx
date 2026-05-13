@@ -17,6 +17,7 @@ import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 
 import companies from "../companies";
 import appointments from "../appointments";
+import { CalendarPage } from "../calendar/CalendarPage";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
@@ -66,7 +67,6 @@ import { NoteShowPage } from "../notes/NoteShowPage.tsx";
 const defaultStore = localStorageStore(undefined, "CRM");
 
 const mvpPlaceholderRoutes = [
-  { path: "/calendar", title: "Kalendár" },
   { path: "/reminders", title: "Pripomienky" },
   { path: "/calls", title: "Hovory" },
 ];
@@ -273,6 +273,7 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         {mvpPlaceholderRoutes.map(({ path, title }) => (
           <Route
             key={path}
@@ -347,6 +348,7 @@ const MobileAdmin = (
             element={<SettingsPageMobile />}
           />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           {mvpPlaceholderRoutes.map(({ path, title }) => (
             <Route
               key={path}
