@@ -1,6 +1,7 @@
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import { ChairsideActivityFeed } from "./ChairsideActivityFeed";
 import { ChairsideDashboardKpis } from "./ChairsideDashboardKpis";
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => {
@@ -30,7 +31,10 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => {
 export const MobileDashboard = () => {
   return (
     <Wrapper>
-      <ChairsideDashboardKpis />
+      <div className="space-y-6">
+        <ChairsideDashboardKpis />
+        <ChairsideActivityFeed />
+      </div>
     </Wrapper>
   );
 };
