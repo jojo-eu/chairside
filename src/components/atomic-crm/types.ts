@@ -183,6 +183,33 @@ export type Reminder = {
   updated_at: string;
 } & Pick<RaRecord, "id">;
 
+export type CallLog = {
+  clinic_id: Identifier;
+  patient_id?: Identifier | null;
+  appointment_id?: Identifier | null;
+  direction: "inbound" | "outbound";
+  phone: string;
+  provider: "vapi" | "telnyx" | "manual" | "system";
+  provider_call_id?: string | null;
+  status: "started" | "completed" | "failed" | "missed";
+  outcome:
+    | "booked"
+    | "needs_reschedule"
+    | "cancelled"
+    | "answered_question"
+    | "no_action"
+    | "failed"
+    | "unknown";
+  started_at: string;
+  ended_at?: string | null;
+  duration_seconds?: number | null;
+  transcript?: string | null;
+  summary?: string | null;
+  metadata: Record<string, unknown>;
+  needs_review: boolean;
+  created_at: string;
+} & Pick<RaRecord, "id">;
+
 export type ContactNote = {
   contact_id: Identifier;
   text: string;

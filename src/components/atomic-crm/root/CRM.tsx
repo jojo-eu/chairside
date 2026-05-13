@@ -17,6 +17,8 @@ import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 
 import companies from "../companies";
 import appointments from "../appointments";
+import calls from "../calls";
+import { CallLogList } from "../calls/CallLogList";
 import { CalendarPage } from "../calendar/CalendarPage";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
@@ -67,9 +69,7 @@ import { NoteShowPage } from "../notes/NoteShowPage.tsx";
 
 const defaultStore = localStorageStore(undefined, "CRM");
 
-const mvpPlaceholderRoutes = [
-  { path: "/calls", title: "Hovory" },
-];
+const mvpPlaceholderRoutes: { path: string; title: string }[] = [];
 
 export type CRMProps = {
   dataProvider?: CrmDataProvider;
@@ -274,6 +274,7 @@ const DesktopAdmin = (
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/calls" element={<CallLogList />} />
         {mvpPlaceholderRoutes.map(({ path, title }) => (
           <Route
             key={path}
@@ -287,6 +288,7 @@ const DesktopAdmin = (
       <Resource name="services" {...services} />
       <Resource name="appointments" {...appointments} />
       <Resource name="reminders" {...reminders} />
+      <Resource name="call_logs" {...calls} />
       <Resource name="contacts" {...contacts} />
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
@@ -350,6 +352,7 @@ const MobileAdmin = (
           />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/calls" element={<CallLogList />} />
           {mvpPlaceholderRoutes.map(({ path, title }) => (
             <Route
               key={path}
@@ -366,6 +369,7 @@ const MobileAdmin = (
         <Resource name="services" {...services} />
         <Resource name="appointments" {...appointments} />
         <Resource name="reminders" {...reminders} />
+        <Resource name="call_logs" {...calls} />
         <Resource name="contacts" show={ContactShow}>
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
         </Resource>
