@@ -822,6 +822,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/calendar/CalendarPage.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/appointments/index.tsx",
           "type": "registry:component"
         },
