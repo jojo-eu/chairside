@@ -1,6 +1,14 @@
 import type { CrmMessages } from "./englishCrmMessages";
 
 export const frenchCrmMessages = {
+  ra: {
+    action: {
+      toggle_theme: "Prepnúť tému",
+    },
+    auth: {
+      logout: "Odhlásiť sa",
+    },
+  },
   resources: {
     companies: {
       name: "Entreprise |||| Entreprises",
@@ -65,8 +73,8 @@ export const frenchCrmMessages = {
       },
     },
     contacts: {
-      name: "Contact |||| Contacts",
-      forcedCaseName: "Contact",
+      name: "Pacient |||| Pacienti",
+      forcedCaseName: "Pacient",
       field_categories: {
         background_info: "Informations complémentaires",
         identity: "Identité",
@@ -90,13 +98,13 @@ export const frenchCrmMessages = {
         sales_id: "Responsable de compte",
       },
       action: {
-        add: "Ajouter un contact",
-        add_first: "Ajoutez votre premier contact",
-        create: "Créer un contact",
-        edit: "Modifier le contact",
+        add: "Pridať pacienta",
+        add_first: "Pridať prvého pacienta",
+        create: "Vytvoriť pacienta",
+        edit: "Upraviť pacienta",
         export_vcard: "Exporter en vCard",
-        new: "Nouveau contact",
-        show: "Afficher le contact",
+        new: "Nový pacient",
+        show: "Zobraziť pacienta",
       },
       background: {
         last_activity_on: "Dernière activité le %{date}",
@@ -108,16 +116,16 @@ export const frenchCrmMessages = {
       position_at: "%{title} chez",
       position_at_company: "%{title} chez %{company}",
       empty: {
-        description: "Il semble que votre liste de contacts soit vide.",
-        title: "Aucun contact trouvé",
+        description: "Zoznam pacientov je zatiaľ prázdny.",
+        title: "Nenašli sa žiadni pacienti",
       },
       import: {
-        title: "Importer des contacts",
-        button: "Importer un fichier CSV",
+        title: "Import pacientov",
+        button: "Importovať CSV",
         complete:
-          "Import des contacts terminé. %{importCount} contacts importés, %{errorCount} erreurs",
+          "Import pacientov bol dokončený. Importovaných: %{importCount}, chyby: %{errorCount}",
         progress:
-          "%{importCount} / %{rowCount} contacts importés, avec %{errorCount} erreurs.",
+          "Importovaných %{importCount} / %{rowCount} pacientov, chyby: %{errorCount}.",
         error:
           "Échec de l'importation de ce fichier. Veuillez vous assurer que vous avez fourni un fichier CSV valide.",
         imported: "Importé",
@@ -128,7 +136,7 @@ export const frenchCrmMessages = {
           "Voici un exemple de fichier CSV que vous pouvez utiliser comme modèle",
         stop: "Arrêter l'importation",
         csv_file: "Fichier CSV",
-        contacts_label: "contact |||| contacts",
+        contacts_label: "pacient |||| pacienti",
       },
       inputs: {
         genders: {
@@ -182,17 +190,17 @@ export const frenchCrmMessages = {
         before_this_month: "Avant ce mois-ci",
         before_this_week: "Avant cette semaine",
         managed_by_me: "Géré par moi",
-        search: "Rechercher nom, entreprise...",
+        search: "Hľadať meno...",
         this_week: "Cette semaine",
         today: "Aujourd'hui",
         tags: "Étiquettes",
-        tasks: "Tâches",
+        tasks: "Pripomienky",
       },
       hot: {
         empty_change_status:
-          'Changez le statut d\'un contact en ajoutant une note à ce contact et en cliquant sur "afficher les options".',
-        empty_hint: 'Les contacts avec un statut "chaud" apparaîtront ici.',
-        title: "Contacts chauds",
+          'Zmeňte stav pacienta pridaním poznámky a kliknutím na "zobraziť možnosti".',
+        empty_hint: 'Pacienti so stavom "hot" sa zobrazia tu.',
+        title: "Prioritní pacienti",
       },
     },
     deals: {
@@ -315,8 +323,8 @@ export const frenchCrmMessages = {
       },
     },
     tasks: {
-      name: "Tâche |||| Tâches",
-      forcedCaseName: "Tâche",
+      name: "Pripomienka |||| Pripomienky",
+      forcedCaseName: "Pripomienka",
       fields: {
         text: "Description",
         due_date: "Date d'échéance",
@@ -332,7 +340,7 @@ export const frenchCrmMessages = {
       actions: {
         postpone_next_week: "Reporté à la semaine prochaine",
         postpone_tomorrow: "Reporter à demain",
-        title: "Actions de tâche",
+        title: "akcie pripomienky",
       },
       added: "Tâche ajoutée",
       deleted: "Tâche supprimée avec succès",
@@ -354,7 +362,7 @@ export const frenchCrmMessages = {
         tomorrow: "Demain",
         with_pending: "Avec des tâches en attente",
       },
-      regarding_contact: "(Concernant : %{name})",
+      regarding_contact: "(Pacient: %{name})",
       updated: "Tâche mise à jour",
     },
     tags: {
@@ -400,20 +408,20 @@ export const frenchCrmMessages = {
       added: "ajoutée",
       details: "Détails",
       last_activity_with_date: "dernière activité %{date}",
-      load_more: "Charger plus",
+      load_more: "Načítať viac",
       misc: "Divers",
       past: "Passé",
       read_more: "En savoir plus",
       retry: "Réessayer",
       show_less: "Afficher moins",
-      task_count: "%{smart_count} tâche |||| %{smart_count} tâches",
+      task_count: "%{smart_count} pripomienka |||| %{smart_count} pripomienky",
       copied: "Copié !",
       copy: "Copier",
       loading: "Chargement...",
       me: "Moi",
     },
     changelog: {
-      title: "Notes de version",
+      title: "Zmeny",
     },
     activity: {
       added_company: "%{name} a ajouté l'entreprise",
@@ -428,12 +436,12 @@ export const frenchCrmMessages = {
       you_added_deal: "Vous avez ajouté l'affaire",
       at_company: "chez",
       to: "à",
-      load_more: "Charger plus d'activité",
+      load_more: "Načítať ďalšiu aktivitu",
     },
     dashboard: {
       deals_chart: "Revenus des affaires à venir",
       deals_pipeline: "Pipeline des affaires",
-      latest_activity: "Dernière activité",
+      latest_activity: "Aktivita",
       latest_activity_error:
         "Erreur lors du chargement de la dernière activité",
       latest_notes: "Mes dernières notes",
@@ -443,10 +451,10 @@ export const frenchCrmMessages = {
         progress: "%{step}/3 terminé",
         whats_next: "Et ensuite ?",
       },
-      upcoming_tasks: "Tâches à venir",
+      upcoming_tasks: "Pripomienky",
     },
     header: {
-      import_data: "Importer des données",
+      import_data: "Import dát",
     },
     image_editor: {
       change: "Changer",

@@ -1,4 +1,12 @@
 export const englishCrmMessages = {
+  ra: {
+    action: {
+      toggle_theme: "Prepnúť tému",
+    },
+    auth: {
+      logout: "Odhlásiť sa",
+    },
+  },
   resources: {
     companies: {
       name: "Company |||| Companies",
@@ -62,8 +70,8 @@ export const englishCrmMessages = {
       },
     },
     contacts: {
-      name: "Contact |||| Contacts",
-      forcedCaseName: "Contact",
+      name: "Pacient |||| Pacienti",
+      forcedCaseName: "Pacient",
       field_categories: {
         background_info: "Background info",
         identity: "Identity",
@@ -87,13 +95,13 @@ export const englishCrmMessages = {
         sales_id: "Account manager",
       },
       action: {
-        add: "Add contact",
-        add_first: "Add your first contact",
-        create: "Create contact",
-        edit: "Edit contact",
+        add: "Pridať pacienta",
+        add_first: "Pridať prvého pacienta",
+        create: "Vytvoriť pacienta",
+        edit: "Upraviť pacienta",
         export_vcard: "Export to vCard",
-        new: "New Contact",
-        show: "Show contact",
+        new: "Nový pacient",
+        show: "Zobraziť pacienta",
       },
       background: {
         last_activity_on: "Last activity on %{date}",
@@ -105,16 +113,16 @@ export const englishCrmMessages = {
       position_at: "%{title} at",
       position_at_company: "%{title} at %{company}",
       empty: {
-        description: "It seems your contact list is empty.",
-        title: "No contacts found",
+        description: "Zoznam pacientov je zatiaľ prázdny.",
+        title: "Nenašli sa žiadni pacienti",
       },
       import: {
-        title: "Import contacts",
-        button: "Import CSV",
+        title: "Import pacientov",
+        button: "Importovať CSV",
         complete:
-          "Contacts import complete. Imported %{importCount} contacts, with %{errorCount} errors",
+          "Import pacientov bol dokončený. Importovaných: %{importCount}, chyby: %{errorCount}",
         progress:
-          "Imported %{importCount} / %{rowCount} contacts, with %{errorCount} errors.",
+          "Importovaných %{importCount} / %{rowCount} pacientov, chyby: %{errorCount}.",
         error:
           "Failed to import this file, please make sure your provided a valid CSV file.",
         imported: "Imported",
@@ -124,7 +132,7 @@ export const englishCrmMessages = {
         sample_hint: "Here is a sample CSV file you can use as a template",
         stop: "Stop import",
         csv_file: "CSV File",
-        contacts_label: "contact |||| contacts",
+        contacts_label: "pacient |||| pacienti",
       },
       inputs: {
         genders: {
@@ -177,17 +185,17 @@ export const englishCrmMessages = {
         before_this_month: "Before this month",
         before_this_week: "Before this week",
         managed_by_me: "Managed by me",
-        search: "Search name, company...",
+        search: "Hľadať meno...",
         this_week: "This week",
         today: "Today",
         tags: "Tags",
-        tasks: "Tasks",
+        tasks: "Pripomienky",
       },
       hot: {
         empty_change_status:
-          'Change the status of a contact by adding a note to that contact and clicking on "show options".',
-        empty_hint: 'Contacts with a "hot" status will appear here.',
-        title: "Hot Contacts",
+          'Zmeňte stav pacienta pridaním poznámky a kliknutím na "zobraziť možnosti".',
+        empty_hint: 'Pacienti so stavom "hot" sa zobrazia tu.',
+        title: "Prioritní pacienti",
       },
     },
     deals: {
@@ -309,8 +317,8 @@ export const englishCrmMessages = {
       },
     },
     tasks: {
-      name: "Task |||| Tasks",
-      forcedCaseName: "Task",
+      name: "Pripomienka |||| Pripomienky",
+      forcedCaseName: "Pripomienka",
       fields: {
         text: "Description",
         due_date: "Due date",
@@ -326,7 +334,7 @@ export const englishCrmMessages = {
       actions: {
         postpone_next_week: "Postpone to next week",
         postpone_tomorrow: "Postpone to tomorrow",
-        title: "task actions",
+        title: "akcie pripomienky",
       },
       added: "Task added",
       deleted: "Task deleted successfully",
@@ -348,7 +356,7 @@ export const englishCrmMessages = {
         tomorrow: "Tomorrow",
         with_pending: "With pending tasks",
       },
-      regarding_contact: "(Re: %{name})",
+      regarding_contact: "(Pacient: %{name})",
       updated: "Task updated",
     },
     tags: {
@@ -394,7 +402,7 @@ export const englishCrmMessages = {
       added: "added",
       details: "Details",
       last_activity_with_date: "last activity %{date}",
-      load_more: "Load more",
+      load_more: "Načítať viac",
       misc: "Misc",
       past: "Past",
       read_more: "Read more",
@@ -404,10 +412,10 @@ export const englishCrmMessages = {
       copy: "Copy",
       loading: "Loading...",
       me: "Me",
-      task_count: "%{smart_count} task |||| %{smart_count} tasks",
+      task_count: "%{smart_count} pripomienka |||| %{smart_count} pripomienky",
     },
     changelog: {
-      title: "Changelog",
+      title: "Zmeny",
     },
     activity: {
       added_company: "%{name} added company",
@@ -422,12 +430,12 @@ export const englishCrmMessages = {
       you_added_deal: "You added deal",
       at_company: "at",
       to: "to",
-      load_more: "Load more activity",
+      load_more: "Načítať ďalšiu aktivitu",
     },
     dashboard: {
       deals_chart: "Upcoming Deal Revenue",
       deals_pipeline: "Deals Pipeline",
-      latest_activity: "Latest Activity",
+      latest_activity: "Aktivita",
       latest_activity_error: "Error loading latest activity",
       latest_notes: "My Latest Notes",
       latest_notes_added_ago: "added %{timeAgo}",
@@ -436,10 +444,10 @@ export const englishCrmMessages = {
         progress: "%{step}/3 done",
         whats_next: "What's next?",
       },
-      upcoming_tasks: "Upcoming Tasks",
+      upcoming_tasks: "Pripomienky",
     },
     header: {
-      import_data: "Import data",
+      import_data: "Import dát",
     },
     image_editor: {
       change: "Change",
@@ -547,7 +555,7 @@ export const englishCrmMessages = {
       password_reset_sent:
         "A reset password email has been sent to your email address",
       record_not_found: "Record not found",
-      title: "Profile",
+      title: "Profil",
       updated: "Your profile has been updated",
       update_error: "An error occurred. Please try again",
     },
