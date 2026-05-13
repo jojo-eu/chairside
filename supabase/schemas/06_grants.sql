@@ -78,6 +78,14 @@ grant all on table public.clinic_members to anon;
 grant all on table public.clinic_members to authenticated;
 grant all on table public.clinic_members to service_role;
 
+grant all on table public.patients to anon;
+grant all on table public.patients to authenticated;
+grant all on table public.patients to service_role;
+
+grant all on table public.services to anon;
+grant all on table public.services to authenticated;
+grant all on table public.services to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
