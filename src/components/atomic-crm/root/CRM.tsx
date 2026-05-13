@@ -23,6 +23,7 @@ import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
 import patients from "../patients";
+import reminders from "../reminders";
 import services from "../services";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
@@ -67,7 +68,6 @@ import { NoteShowPage } from "../notes/NoteShowPage.tsx";
 const defaultStore = localStorageStore(undefined, "CRM");
 
 const mvpPlaceholderRoutes = [
-  { path: "/reminders", title: "Pripomienky" },
   { path: "/calls", title: "Hovory" },
 ];
 
@@ -286,6 +286,7 @@ const DesktopAdmin = (
       <Resource name="patients" {...patients} />
       <Resource name="services" {...services} />
       <Resource name="appointments" {...appointments} />
+      <Resource name="reminders" {...reminders} />
       <Resource name="contacts" {...contacts} />
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
@@ -364,6 +365,7 @@ const MobileAdmin = (
         />
         <Resource name="services" {...services} />
         <Resource name="appointments" {...appointments} />
+        <Resource name="reminders" {...reminders} />
         <Resource name="contacts" show={ContactShow}>
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
         </Resource>

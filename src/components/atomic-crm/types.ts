@@ -162,6 +162,27 @@ export type Appointment = {
   patient_notes?: string | null;
 } & Pick<RaRecord, "id">;
 
+export type Reminder = {
+  clinic_id: Identifier;
+  appointment_id: Identifier;
+  patient_id: Identifier;
+  scheduled_for: string;
+  sent_at?: string | null;
+  status:
+    | "pending"
+    | "sent"
+    | "delivered"
+    | "failed"
+    | "responded"
+    | "cancelled";
+  channel: "sms" | "voice";
+  template_key: string;
+  response_status?: "confirmed" | "declined" | "opted_out" | "needs_review" | null;
+  response_received_at?: string | null;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;
+
 export type ContactNote = {
   contact_id: Identifier;
   text: string;
