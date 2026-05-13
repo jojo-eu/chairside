@@ -8,6 +8,8 @@ alter table public.clinics enable row level security;
 alter table public.clinic_members enable row level security;
 alter table public.patients enable row level security;
 alter table public.services enable row level security;
+alter table public.clinic_closures enable row level security;
+alter table public.appointments enable row level security;
 alter table public.companies enable row level security;
 alter table public.contacts enable row level security;
 alter table public.contact_notes enable row level security;
@@ -30,6 +32,12 @@ create policy "Clinic members can view patients in their clinics" on public.pati
 
 -- Services
 create policy "Clinic members can view services in their clinics" on public.services for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Clinic Closures
+create policy "Clinic members can view closures in their clinics" on public.clinic_closures for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Appointments
+create policy "Clinic members can view appointments in their clinics" on public.appointments for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);

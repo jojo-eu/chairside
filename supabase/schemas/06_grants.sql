@@ -86,6 +86,14 @@ grant all on table public.services to anon;
 grant all on table public.services to authenticated;
 grant all on table public.services to service_role;
 
+grant all on table public.clinic_closures to anon;
+grant all on table public.clinic_closures to authenticated;
+grant all on table public.clinic_closures to service_role;
+
+grant all on table public.appointments to anon;
+grant all on table public.appointments to authenticated;
+grant all on table public.appointments to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
