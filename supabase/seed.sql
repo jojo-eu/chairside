@@ -117,6 +117,11 @@ DECLARE
     v_service_plomba uuid;
     v_service_extrakcia uuid;
     v_service_prevencia uuid;
+    v_appointment_martin uuid;
+    v_appointment_lucia uuid;
+    v_appointment_petra uuid;
+    v_appointment_tomas uuid;
+    v_appointment_anna uuid;
 BEGIN
     INSERT INTO public.clinics (
         name,
@@ -187,6 +192,7 @@ BEGIN
     RETURNING id INTO v_clinic_id;
 
     DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.chairside_activity_log WHERE clinic_id = v_clinic_id;
     DELETE FROM public.clinic_closures WHERE clinic_id = v_clinic_id;
     DELETE FROM public.services WHERE clinic_id = v_clinic_id;
     DELETE FROM public.patients WHERE clinic_id = v_clinic_id;
@@ -256,4 +262,144 @@ BEGIN
         (v_clinic_id, v_patient_petra, v_service_plomba, '2026-05-21 11:00:00+00', '2026-05-21 12:00:00+00', 'scheduled', 'manual', null, null, null),
         (v_clinic_id, v_patient_tomas, v_service_extrakcia, '2026-05-22 09:30:00+00', '2026-05-22 10:00:00+00', 'needs_reschedule', 'ai_voice', null, 'Pacient chce presunúť termín.', null),
         (v_clinic_id, v_patient_anna, v_service_prevencia, '2026-05-25 06:30:00+00', '2026-05-25 07:00:00+00', 'scheduled', 'imported', null, 'Importovaný testovací termín.', null);
+
+    SELECT id INTO v_appointment_martin FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_martin AND starts_at = '2026-05-20 07:00:00+00';
+    SELECT id INTO v_appointment_lucia FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_lucia AND starts_at = '2026-05-20 08:00:00+00';
+    SELECT id INTO v_appointment_petra FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_petra AND starts_at = '2026-05-21 11:00:00+00';
+    SELECT id INTO v_appointment_tomas FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_tomas AND starts_at = '2026-05-22 09:30:00+00';
+    SELECT id INTO v_appointment_anna FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_anna AND starts_at = '2026-05-25 06:30:00+00';
+
+    INSERT INTO public.chairside_activity_log (
+        clinic_id,
+        actor_type,
+        actor_id,
+        actor_label,
+        action,
+        entity_type,
+        entity_id,
+        details,
+        created_at
+    )
+    VALUES
+        (
+            v_clinic_id,
+            'ai',
+            null,
+            'AI recepcia',
+            'appointment.created',
+            'appointment',
+            v_appointment_lucia,
+            jsonb_build_object(
+                'patient_name', 'Lucia Novotná',
+                'service_name', 'Dentálna hygiena',
+                'starts_at', '2026-05-20T08:00:00Z',
+                'source', 'ai_voice'
+            ),
+            '2026-05-19 07:35:00+00'
+        ),
+        (
+            v_clinic_id,
+            'system',
+            null,
+            'Systém pripomienok',
+            'reminder.sent',
+            'reminder',
+            null,
+            jsonb_build_object(
+                'patient_name', 'Martin Kováč',
+                'appointment_id', v_appointment_martin,
+                'channel', 'sms',
+                'template', 'appointment_confirmation_24h'
+            ),
+            '2026-05-19 08:00:00+00'
+        ),
+        (
+            v_clinic_id,
+            'patient',
+            v_patient_martin,
+            'Martin Kováč',
+            'appointment.confirmed',
+            'appointment',
+            v_appointment_martin,
+            jsonb_build_object(
+                'response', 'ÁNO',
+                'channel', 'sms',
+                'confirmed_at', '2026-05-19T08:10:00Z'
+            ),
+            '2026-05-19 08:10:00+00'
+        ),
+        (
+            v_clinic_id,
+            'user',
+            null,
+            'Local Tester',
+            'patient.created',
+            'patient',
+            v_patient_petra,
+            jsonb_build_object(
+                'patient_name', 'Petra Horváthová',
+                'source', 'manual'
+            ),
+            '2026-05-19 08:25:00+00'
+        ),
+        (
+            v_clinic_id,
+            'ai',
+            null,
+            'AI recepcia',
+            'appointment.needs_reschedule',
+            'appointment',
+            v_appointment_tomas,
+            jsonb_build_object(
+                'patient_name', 'Tomáš Svoboda',
+                'service_name', 'Extrakcia',
+                'reason', 'Pacient chce presunúť termín.'
+            ),
+            '2026-05-19 09:05:00+00'
+        ),
+        (
+            v_clinic_id,
+            'user',
+            null,
+            'Local Tester',
+            'service.updated',
+            'service',
+            v_service_hygiena,
+            jsonb_build_object(
+                'service_name', 'Dentálna hygiena',
+                'duration_minutes', 45,
+                'buffer_minutes', 10
+            ),
+            '2026-05-19 09:30:00+00'
+        ),
+        (
+            v_clinic_id,
+            'system',
+            null,
+            'Import',
+            'appointment.created',
+            'appointment',
+            v_appointment_anna,
+            jsonb_build_object(
+                'patient_name', 'Anna Mrázová',
+                'service_name', 'Prevencia',
+                'source', 'imported'
+            ),
+            '2026-05-19 10:00:00+00'
+        ),
+        (
+            v_clinic_id,
+            'user',
+            null,
+            'Local Tester',
+            'patient.updated',
+            'patient',
+            v_patient_martin,
+            jsonb_build_object(
+                'patient_name', 'Martin Kováč',
+                'changed_field', 'notes',
+                'summary', 'Doplnená preferencia ranných termínov.'
+            ),
+            '2026-05-19 10:20:00+00'
+        );
 END $$;
