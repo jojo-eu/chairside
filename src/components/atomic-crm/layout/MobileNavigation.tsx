@@ -23,12 +23,8 @@ export const MobileNavigation = () => {
     currentPath = "/";
   } else if (matchPath("/contacts/*", location.pathname)) {
     currentPath = "/contacts";
-  } else if (matchPath("/companies/*", location.pathname)) {
-    currentPath = "/companies";
   } else if (matchPath("/tasks/*", location.pathname)) {
     currentPath = "/tasks";
-  } else if (matchPath("/deals/*", location.pathname)) {
-    currentPath = "/deals";
   } else {
     currentPath = false;
   }
@@ -63,16 +59,14 @@ export const MobileNavigation = () => {
           <NavigationButton
             href="/contacts"
             Icon={Users}
-            label={translate("resources.contacts.name", {
-              smart_count: 2,
-            })}
+            label={translate("crm.navigation.patients")}
             isActive={currentPath === "/contacts"}
           />
           <CreateButton />
           <NavigationButton
             href="/tasks"
             Icon={ListTodo}
-            label={translate("resources.tasks.name", { smart_count: 2 })}
+            label={translate("crm.navigation.reminders")}
             isActive={currentPath === "/tasks"}
           />
           <SettingsButton />
@@ -182,7 +176,7 @@ const SettingsButton = () => {
     <NavigationButton
       href="/settings"
       Icon={Settings}
-      label={translate("crm.settings.title")}
+      label={translate("crm.navigation.settings")}
       isActive={isActive}
     />
   );

@@ -533,6 +533,9 @@ export const frenchCrmMessages = {
     language: "Langue",
     navigation: {
       label: "Navigation CRM",
+      patients: "Pacienti",
+      reminders: "Pripomienky",
+      settings: "Nastavenia",
     },
     profile: {
       inbound: {

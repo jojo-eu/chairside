@@ -526,6 +526,9 @@ export const englishCrmMessages = {
     language: "Language",
     navigation: {
       label: "CRM navigation",
+      patients: "Pacienti",
+      reminders: "Pripomienky",
+      settings: "Nastavenia",
     },
     profile: {
       inbound: {
