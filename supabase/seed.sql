@@ -122,6 +122,11 @@ DECLARE
     v_appointment_petra uuid;
     v_appointment_tomas uuid;
     v_appointment_anna uuid;
+    v_reminder_martin uuid;
+    v_reminder_lucia uuid;
+    v_reminder_petra uuid;
+    v_reminder_tomas uuid;
+    v_reminder_anna uuid;
 BEGIN
     INSERT INTO public.clinics (
         name,
@@ -191,8 +196,11 @@ BEGIN
         updated_at = now()
     RETURNING id INTO v_clinic_id;
 
-    DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.messages WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.reminders WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.opt_outs WHERE clinic_id = v_clinic_id;
     DELETE FROM public.chairside_activity_log WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
     DELETE FROM public.clinic_closures WHERE clinic_id = v_clinic_id;
     DELETE FROM public.services WHERE clinic_id = v_clinic_id;
     DELETE FROM public.patients WHERE clinic_id = v_clinic_id;
@@ -268,6 +276,69 @@ BEGIN
     SELECT id INTO v_appointment_petra FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_petra AND starts_at = '2026-05-21 11:00:00+00';
     SELECT id INTO v_appointment_tomas FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_tomas AND starts_at = '2026-05-22 09:30:00+00';
     SELECT id INTO v_appointment_anna FROM public.appointments WHERE clinic_id = v_clinic_id AND patient_id = v_patient_anna AND starts_at = '2026-05-25 06:30:00+00';
+
+    INSERT INTO public.reminders (
+        clinic_id,
+        appointment_id,
+        patient_id,
+        scheduled_for,
+        sent_at,
+        status,
+        channel,
+        template_key,
+        response_status,
+        response_received_at,
+        created_at,
+        updated_at
+    )
+    VALUES
+        (v_clinic_id, v_appointment_martin, v_patient_martin, '2026-05-19 08:00:00+00', '2026-05-19 08:00:30+00', 'responded', 'sms', 'appointment_confirmation_24h', 'confirmed', '2026-05-19 08:10:00+00', '2026-05-19 07:55:00+00', '2026-05-19 08:10:00+00'),
+        (v_clinic_id, v_appointment_lucia, v_patient_lucia, '2026-05-19 08:15:00+00', '2026-05-19 08:15:30+00', 'delivered', 'sms', 'appointment_confirmation_24h', null, null, '2026-05-19 08:05:00+00', '2026-05-19 08:16:00+00'),
+        (v_clinic_id, v_appointment_petra, v_patient_petra, '2026-05-20 11:00:00+00', null, 'pending', 'sms', 'appointment_confirmation_24h', null, null, '2026-05-19 08:20:00+00', '2026-05-19 08:20:00+00'),
+        (v_clinic_id, v_appointment_tomas, v_patient_tomas, '2026-05-21 09:30:00+00', '2026-05-21 09:30:45+00', 'responded', 'sms', 'appointment_confirmation_24h', 'needs_review', '2026-05-21 09:42:00+00', '2026-05-21 09:20:00+00', '2026-05-21 09:42:00+00'),
+        (v_clinic_id, v_appointment_anna, v_patient_anna, '2026-05-24 06:30:00+00', '2026-05-24 06:31:00+00', 'failed', 'sms', 'appointment_confirmation_24h', null, null, '2026-05-24 06:20:00+00', '2026-05-24 06:31:00+00');
+
+    SELECT id INTO v_reminder_martin FROM public.reminders WHERE clinic_id = v_clinic_id AND appointment_id = v_appointment_martin;
+    SELECT id INTO v_reminder_lucia FROM public.reminders WHERE clinic_id = v_clinic_id AND appointment_id = v_appointment_lucia;
+    SELECT id INTO v_reminder_petra FROM public.reminders WHERE clinic_id = v_clinic_id AND appointment_id = v_appointment_petra;
+    SELECT id INTO v_reminder_tomas FROM public.reminders WHERE clinic_id = v_clinic_id AND appointment_id = v_appointment_tomas;
+    SELECT id INTO v_reminder_anna FROM public.reminders WHERE clinic_id = v_clinic_id AND appointment_id = v_appointment_anna;
+
+    INSERT INTO public.messages (
+        clinic_id,
+        patient_id,
+        appointment_id,
+        reminder_id,
+        direction,
+        channel,
+        provider,
+        provider_message_id,
+        body,
+        status,
+        sent_at,
+        received_at,
+        metadata,
+        created_at
+    )
+    VALUES
+        (v_clinic_id, v_patient_martin, v_appointment_martin, v_reminder_martin, 'outbound', 'sms', 'telnyx', 'test-msg-martin-outbound', 'Dobrý deň Martin, pripomíname Vám termín v Zubná Praxma Bratislava zajtra o 09:00. Potvrďte prosím odpoveďou ÁNO alebo NIE.', 'delivered', '2026-05-19 08:00:30+00', null, jsonb_build_object('local_seed', true, 'template_key', 'appointment_confirmation_24h'), '2026-05-19 08:00:30+00'),
+        (v_clinic_id, v_patient_martin, v_appointment_martin, v_reminder_martin, 'inbound', 'sms', 'telnyx', 'test-msg-martin-inbound', 'ÁNO', 'received', null, '2026-05-19 08:10:00+00', jsonb_build_object('local_seed', true, 'parsed_response', 'confirmed'), '2026-05-19 08:10:00+00'),
+        (v_clinic_id, v_patient_lucia, v_appointment_lucia, v_reminder_lucia, 'outbound', 'sms', 'telnyx', 'test-msg-lucia-outbound', 'Dobrý deň Lucia, pripomíname Vám termín v Zubná Praxma Bratislava zajtra o 10:00. Potvrďte prosím odpoveďou ÁNO alebo NIE.', 'delivered', '2026-05-19 08:15:30+00', null, jsonb_build_object('local_seed', true, 'template_key', 'appointment_confirmation_24h'), '2026-05-19 08:15:30+00'),
+        (v_clinic_id, v_patient_petra, v_appointment_petra, v_reminder_petra, 'outbound', 'sms', 'system', 'test-msg-petra-queued', 'Dobrý deň Petra, pripomíname Vám termín v Zubná Praxma Bratislava zajtra o 13:00. Potvrďte prosím odpoveďou ÁNO alebo NIE.', 'queued', null, null, jsonb_build_object('local_seed', true, 'template_key', 'appointment_confirmation_24h'), '2026-05-20 10:55:00+00'),
+        (v_clinic_id, v_patient_tomas, v_appointment_tomas, v_reminder_tomas, 'outbound', 'sms', 'telnyx', 'test-msg-tomas-outbound', 'Dobrý deň Tomáš, pripomíname Vám termín v Zubná Praxma Bratislava zajtra o 11:30. Potvrďte prosím odpoveďou ÁNO alebo NIE.', 'sent', '2026-05-21 09:30:45+00', null, jsonb_build_object('local_seed', true, 'template_key', 'appointment_confirmation_24h'), '2026-05-21 09:30:45+00'),
+        (v_clinic_id, v_patient_tomas, v_appointment_tomas, v_reminder_tomas, 'inbound', 'sms', 'telnyx', 'test-msg-tomas-inbound', 'NIE, prosím iný termín', 'received', null, '2026-05-21 09:42:00+00', jsonb_build_object('local_seed', true, 'parsed_response', 'needs_review'), '2026-05-21 09:42:00+00'),
+        (v_clinic_id, v_patient_anna, v_appointment_anna, v_reminder_anna, 'outbound', 'sms', 'telnyx', 'test-msg-anna-failed', 'Dobrý deň Anna, pripomíname Vám termín v Zubná Praxma Bratislava zajtra o 08:30. Potvrďte prosím odpoveďou ÁNO alebo NIE.', 'failed', '2026-05-24 06:31:00+00', null, jsonb_build_object('local_seed', true, 'failure_reason', 'Test provider failure'), '2026-05-24 06:31:00+00');
+
+    INSERT INTO public.opt_outs (
+        clinic_id,
+        patient_id,
+        phone,
+        channel,
+        reason,
+        created_at
+    )
+    VALUES
+        (v_clinic_id, v_patient_tomas, '+420606777888', 'sms', 'Local test opt-out row for future UI testing.', '2026-05-21 09:45:00+00');
 
     INSERT INTO public.chairside_activity_log (
         clinic_id,
