@@ -338,6 +338,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/patients/index.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/patients/PatientList.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/notes/utils.ts",
           "type": "registry:component"
         },
