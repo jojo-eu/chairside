@@ -158,6 +158,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/services/index.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/services/ServiceList.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/sales/useGetSalesName.ts",
           "type": "registry:component"
         },
