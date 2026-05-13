@@ -110,6 +110,10 @@ grant all on table public.opt_outs to anon;
 grant all on table public.opt_outs to authenticated;
 grant all on table public.opt_outs to service_role;
 
+grant all on table public.call_logs to anon;
+grant all on table public.call_logs to authenticated;
+grant all on table public.call_logs to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
