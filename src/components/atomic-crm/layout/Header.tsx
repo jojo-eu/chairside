@@ -1,4 +1,4 @@
-import { FileText, Import, Settings, User } from "lucide-react";
+import { FileText, Import, Settings, Stethoscope, User } from "lucide-react";
 import { CanAccess, useTranslate, useUserMenu } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
@@ -96,6 +96,7 @@ const Header = () => {
                   <CanAccess resource="configuration" action="edit">
                     <SettingsMenu />
                   </CanAccess>
+                  <ServicesMenu />
                   <ImportFromJsonMenuItem />
                   <ChangelogMenuItem />
                 </UserMenu>
@@ -156,6 +157,21 @@ const SettingsMenu = () => {
       <Link to="/settings" className="flex items-center gap-2">
         <Settings />
         {translate("crm.navigation.settings")}
+      </Link>
+    </DropdownMenuItem>
+  );
+};
+
+const ServicesMenu = () => {
+  const userMenuContext = useUserMenu();
+  if (!userMenuContext) {
+    throw new Error("<ServicesMenu> must be used inside <UserMenu>");
+  }
+  return (
+    <DropdownMenuItem asChild onClick={userMenuContext.onClose}>
+      <Link to="/services" className="flex items-center gap-2">
+        <Stethoscope />
+        Služby
       </Link>
     </DropdownMenuItem>
   );

@@ -22,6 +22,7 @@ import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
 import patients from "../patients";
+import services from "../services";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
 import { SignupPage } from "../login/SignupPage";
@@ -282,7 +283,7 @@ const DesktopAdmin = (
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="patients" {...patients} />
-      <Resource name="services" recordRepresentation={(record) => record.name} />
+      <Resource name="services" {...services} />
       <Resource name="appointments" {...appointments} />
       <Resource name="contacts" {...contacts} />
       <Resource name="companies" {...companies} />
@@ -359,7 +360,7 @@ const MobileAdmin = (
           list={patients.list}
           recordRepresentation={patients.recordRepresentation}
         />
-        <Resource name="services" recordRepresentation={(record) => record.name} />
+        <Resource name="services" {...services} />
         <Resource name="appointments" {...appointments} />
         <Resource name="contacts" show={ContactShow}>
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />

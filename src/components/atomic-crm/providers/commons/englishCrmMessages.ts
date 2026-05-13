@@ -213,7 +213,11 @@ export const englishCrmMessages = {
       name: "Služba |||| Služby",
       forcedCaseName: "Služba",
       fields: {
-        name: "Služba",
+        name: "Názov",
+        duration_minutes: "Trvanie",
+        buffer_minutes: "Buffer",
+        active: "Aktívna",
+        display_order: "Poradie",
       },
     },
     appointments: {
