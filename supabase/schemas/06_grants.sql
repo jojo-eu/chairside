@@ -10,6 +10,10 @@ grant usage on schema public to authenticated;
 grant usage on schema public to service_role;
 
 -- Function grants
+grant all on function public.current_clinic_ids() to anon;
+grant all on function public.current_clinic_ids() to authenticated;
+grant all on function public.current_clinic_ids() to service_role;
+
 grant all on function public.cleanup_note_attachments() to anon;
 grant all on function public.cleanup_note_attachments() to authenticated;
 grant all on function public.cleanup_note_attachments() to service_role;
@@ -66,6 +70,14 @@ grant all on function public.set_sales_id_default() to authenticated;
 grant all on function public.set_sales_id_default() to service_role;
 
 -- Table grants
+grant all on table public.clinics to anon;
+grant all on table public.clinics to authenticated;
+grant all on table public.clinics to service_role;
+
+grant all on table public.clinic_members to anon;
+grant all on table public.clinic_members to authenticated;
+grant all on table public.clinic_members to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;

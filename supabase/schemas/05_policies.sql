@@ -4,6 +4,8 @@
 --
 
 -- Enable RLS on all tables
+alter table public.clinics enable row level security;
+alter table public.clinic_members enable row level security;
 alter table public.companies enable row level security;
 alter table public.contacts enable row level security;
 alter table public.contact_notes enable row level security;
@@ -14,6 +16,12 @@ alter table public.tags enable row level security;
 alter table public.tasks enable row level security;
 alter table public.configuration enable row level security;
 alter table public.favicons_excluded_domains enable row level security;
+
+-- Clinics
+create policy "Clinic members can view their clinics" on public.clinics for select to authenticated using (id in (select public.current_clinic_ids()));
+
+-- Clinic Members
+create policy "Clinic members can view memberships in their clinics" on public.clinic_members for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);

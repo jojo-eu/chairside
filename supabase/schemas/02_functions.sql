@@ -3,6 +3,15 @@
 -- This file declares all PL/pgSQL functions in the public schema.
 --
 
+CREATE OR REPLACE FUNCTION "public"."current_clinic_ids"() RETURNS SETOF "uuid"
+    LANGUAGE "sql" SECURITY DEFINER STABLE
+    SET "search_path" TO 'public'
+    AS $$
+    select clinic_id
+    from public.clinic_members
+    where user_id = auth.uid();
+$$;
+
 CREATE OR REPLACE FUNCTION "public"."cleanup_note_attachments"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
