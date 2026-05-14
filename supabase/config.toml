@@ -174,3 +174,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.check-availability]
 verify_jwt = false
+[functions.book-appointment]
+verify_jwt = false
