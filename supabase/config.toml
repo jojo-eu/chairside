@@ -180,3 +180,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.receive-reminder-response]
 verify_jwt = false
+[functions.telnyx-webhook]
+verify_jwt = false
