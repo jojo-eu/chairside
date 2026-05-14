@@ -9,7 +9,7 @@ The current booking API surface contains two authenticated Supabase Edge Functio
 - `check-availability`
 - `book-appointment`
 
-These functions establish the first internal booking boundary for Chairside. They support checking available appointment slots and creating appointments for existing clinics, patients, and services. They do not yet implement idempotency, reminder creation, activity logging, public booking, or provider integrations.
+These functions establish the first internal booking boundary for Chairside. They support checking available appointment slots and creating appointments for existing clinics, patients, and services. After a successful booking, `book-appointment` also creates one pending reminder row and one Chairside activity log row as best-effort side effects. It does not yet implement idempotency, SMS/message delivery, public booking, or provider integrations.
 
 The functions use Supabase Auth JWTs and user-scoped Supabase clients for validation reads. `book-appointment` then uses the service-role admin client only after clinic, patient, and service access have been validated through the user-scoped client and RLS.
 
@@ -197,6 +197,74 @@ After those checks, the function inserts an appointment with:
 - optional `patient_notes`
 - `created_by` set to the authenticated user's id when available
 
+After the appointment is created, the function also attempts two best-effort side effects:
+
+1. Create one row in `public.reminders`.
+2. Create one row in `public.chairside_activity_log`.
+
+These side effects are not part of the booking success contract. If reminder creation or activity logging fails, the function logs a server-side warning and still returns the created appointment with HTTP `201 Created`.
+
+## `book-appointment` Reminder Side Effect
+
+On successful appointment creation, the function attempts to insert one reminder row:
+
+```json
+{
+  "clinic_id": "request clinic_id",
+  "appointment_id": "created appointment id",
+  "patient_id": "request patient_id",
+  "scheduled_for": "starts_at minus 24 hours, or now() if that would be in the past",
+  "channel": "sms",
+  "status": "pending",
+  "template_key": "appointment_confirmation_24h"
+}
+```
+
+Reminder behavior:
+
+- Creates one `public.reminders` row per successful booking attempt.
+- Uses `status = "pending"`.
+- Uses `channel = "sms"`.
+- Uses `template_key = "appointment_confirmation_24h"`.
+- Sets `scheduled_for` to 24 hours before the appointment `starts_at`.
+- If that `scheduled_for` value would be in the past, schedules it at the function's current `now()`.
+- Does not create a `public.messages` row.
+- Does not send SMS.
+- Does not call Telnyx or any external provider.
+- Is best-effort; reminder creation failure does not fail the booking.
+
+## `book-appointment` Activity Log Side Effect
+
+On successful appointment creation, the function attempts to insert one `public.chairside_activity_log` row:
+
+```json
+{
+  "clinic_id": "request clinic_id",
+  "actor_type": "user | ai | system",
+  "actor_id": "authenticated user id for manual bookings, otherwise null",
+  "actor_label": "user email, Používateľ, AI recepcia, or Import",
+  "action": "appointment.created",
+  "entity_type": "appointment",
+  "entity_id": "created appointment id",
+  "details": {
+    "patient_id": "request patient_id",
+    "service_id": "request service_id",
+    "starts_at": "appointment starts_at",
+    "ends_at": "computed appointment ends_at",
+    "source": "request source",
+    "notes": "included only when present"
+  }
+}
+```
+
+Actor mapping:
+
+- `manual` uses `actor_type = "user"`, `actor_id = authenticated user id`, and `actor_label = authenticated user email` or `Používateľ`.
+- `ai_voice` and `ai_sms` use `actor_type = "ai"`, `actor_id = null`, and `actor_label = "AI recepcia"`.
+- `imported` uses `actor_type = "system"`, `actor_id = null`, and `actor_label = "Import"`.
+
+Activity logging is best-effort; activity log creation failure does not fail the booking.
+
 ## Conflict Handling
 
 The database exclusion constraint `appointments_no_overlap` is the final double-booking guard.
@@ -209,21 +277,27 @@ The database exclusion constraint `appointments_no_overlap` is the final double-
 
 The function treats PostgreSQL exclusion-constraint errors with code `23P01`, messages mentioning `appointments_no_overlap`, or messages mentioning a conflicting exclusion constraint as appointment overlap conflicts.
 
+When an overlap occurs, the appointment insert fails before best-effort side effects run. A failed overlap booking does not create an appointment, reminder, or Chairside activity log row.
+
 ## Local Validation Results
 
 Local validation has confirmed:
 
 - `check-availability` returned HTTP `200` with available slots for a seeded clinic, service, and date.
 - `book-appointment` returned HTTP `201 Created` for a valid booking request.
+- A successful `book-appointment` request created one `public.reminders` row with `status = "pending"`, `channel = "sms"`, and `template_key = "appointment_confirmation_24h"`.
+- A successful `book-appointment` request created one `public.chairside_activity_log` row with `action = "appointment.created"`.
 - A duplicate same-slot booking returned HTTP `409` with code `appointment_overlap`.
+- A duplicate same-slot booking did not create an extra appointment, reminder, or Chairside activity log row.
 
 No browser testing is required for this documentation checkpoint.
 
 ## Known Limitations
 
 - No idempotency yet.
-- No reminders are created after booking yet.
-- No activity log entry is created after booking yet.
+- No SMS sending yet.
+- No `public.messages` row creation yet.
+- No Telnyx delivery integration yet.
 - No public booking flow exists yet.
 - No Telegram, Vapi, Telnyx, or OpenClaw integration exists yet.
 - Timezone handling is MVP/simple and should be hardened before production scheduling edge cases.
