@@ -566,6 +566,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/internal/ProviderProcessingAttemptsPage.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/internal/ProviderEventsPage.tsx",
           "type": "registry:component"
         },
