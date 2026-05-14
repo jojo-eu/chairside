@@ -184,3 +184,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.vapi-webhook]
 verify_jwt = false
+[functions.process-provider-event]
+verify_jwt = false
