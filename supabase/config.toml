@@ -178,3 +178,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.mark-reminder-sent]
 verify_jwt = false
+[functions.receive-reminder-response]
+verify_jwt = false
