@@ -204,6 +204,9 @@ BEGIN
     DELETE FROM public.provider_events
     WHERE clinic_id = v_clinic_id
        OR provider_event_id LIKE 'test-provider-event-%';
+    DELETE FROM public.provider_mappings
+    WHERE clinic_id = v_clinic_id
+      AND metadata->>'local_seed' = 'true';
     DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
     DELETE FROM public.clinic_closures WHERE clinic_id = v_clinic_id;
     DELETE FROM public.services WHERE clinic_id = v_clinic_id;
@@ -577,6 +580,71 @@ BEGIN
             jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'mapping_status', 'unmapped'),
             null,
             '2026-05-24 07:00:00+00'
+        );
+
+    INSERT INTO public.provider_mappings (
+        clinic_id,
+        provider,
+        mapping_type,
+        provider_identifier,
+        label,
+        active,
+        metadata
+    )
+    VALUES
+        (
+            v_clinic_id,
+            'telnyx',
+            'phone_number',
+            '+421900000001',
+            'Test Telnyx SMS number',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'purpose', 'local_testing')
+        ),
+        (
+            v_clinic_id,
+            'telnyx',
+            'messaging_profile_id',
+            'test-telnyx-messaging-profile-chairside',
+            'Test Telnyx messaging profile',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'purpose', 'local_testing')
+        ),
+        (
+            v_clinic_id,
+            'telnyx',
+            'webhook_secret_id',
+            'test-telnyx-webhook-secret-ref-chairside',
+            'Test Telnyx webhook secret reference',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'purpose', 'local_testing')
+        ),
+        (
+            v_clinic_id,
+            'vapi',
+            'assistant_id',
+            'test-vapi-assistant-katarina',
+            'Test Vapi Katarína assistant',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'vapi', 'purpose', 'local_testing')
+        ),
+        (
+            v_clinic_id,
+            'vapi',
+            'phone_number',
+            '+421900000002',
+            'Test Vapi voice number',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'vapi', 'purpose', 'local_testing')
+        ),
+        (
+            v_clinic_id,
+            'vapi',
+            'account_id',
+            'test-vapi-account-chairside',
+            'Test Vapi account',
+            true,
+            jsonb_build_object('local_seed', true, 'fake_provider', 'vapi', 'purpose', 'local_testing')
         );
 
     INSERT INTO public.chairside_activity_log (
