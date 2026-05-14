@@ -182,3 +182,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.telnyx-webhook]
 verify_jwt = false
+[functions.vapi-webhook]
+verify_jwt = false
