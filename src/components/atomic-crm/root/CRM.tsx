@@ -26,6 +26,7 @@ import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
 import { BookingTestPage } from "../internal/BookingTestPage";
 import { ProviderEventsPage } from "../internal/ProviderEventsPage";
+import { ProviderProcessingAttemptsPage } from "../internal/ProviderProcessingAttemptsPage";
 import patients from "../patients";
 import reminders from "../reminders";
 import services from "../services";
@@ -279,6 +280,10 @@ const DesktopAdmin = (
         <Route path="/calls" element={<CallLogList />} />
         <Route path="/internal/booking-test" element={<BookingTestPage />} />
         <Route path="/internal/provider-events" element={<ProviderEventsPage />} />
+        <Route
+          path="/internal/provider-processing-attempts"
+          element={<ProviderProcessingAttemptsPage />}
+        />
         {mvpPlaceholderRoutes.map(({ path, title }) => (
           <Route
             key={path}
@@ -359,6 +364,10 @@ const MobileAdmin = (
           <Route path="/calls" element={<CallLogList />} />
           <Route path="/internal/booking-test" element={<BookingTestPage />} />
           <Route path="/internal/provider-events" element={<ProviderEventsPage />} />
+          <Route
+            path="/internal/provider-processing-attempts"
+            element={<ProviderProcessingAttemptsPage />}
+          />
           {mvpPlaceholderRoutes.map(({ path, title }) => (
             <Route
               key={path}
