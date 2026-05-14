@@ -201,6 +201,9 @@ BEGIN
     DELETE FROM public.opt_outs WHERE clinic_id = v_clinic_id;
     DELETE FROM public.chairside_activity_log WHERE clinic_id = v_clinic_id;
     DELETE FROM public.call_logs WHERE clinic_id = v_clinic_id;
+    DELETE FROM public.provider_events
+    WHERE clinic_id = v_clinic_id
+       OR provider_event_id LIKE 'test-provider-event-%';
     DELETE FROM public.appointments WHERE clinic_id = v_clinic_id;
     DELETE FROM public.clinic_closures WHERE clinic_id = v_clinic_id;
     DELETE FROM public.services WHERE clinic_id = v_clinic_id;
@@ -475,6 +478,106 @@ BEGIN
     )
     VALUES
         (v_clinic_id, v_patient_tomas, '+420606777888', 'sms', 'Local test opt-out row for future UI testing.', '2026-05-21 09:45:00+00');
+
+    INSERT INTO public.provider_events (
+        clinic_id,
+        provider,
+        provider_event_id,
+        event_type,
+        resource_type,
+        resource_id,
+        received_at,
+        processed_at,
+        processing_status,
+        payload,
+        error_message,
+        created_at
+    )
+    VALUES
+        (
+            v_clinic_id,
+            'telnyx',
+            'test-provider-event-telnyx-message-sent',
+            'message.sent',
+            'message',
+            'test-msg-tomas-outbound',
+            '2026-05-21 09:30:45+00',
+            '2026-05-21 09:30:46+00',
+            'processed',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'message_status', 'sent'),
+            null,
+            '2026-05-21 09:30:45+00'
+        ),
+        (
+            v_clinic_id,
+            'telnyx',
+            'test-provider-event-telnyx-message-received',
+            'message.received',
+            'message',
+            'test-msg-martin-inbound',
+            '2026-05-19 08:10:00+00',
+            '2026-05-19 08:10:02+00',
+            'processed',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'body', 'ÁNO'),
+            null,
+            '2026-05-19 08:10:00+00'
+        ),
+        (
+            v_clinic_id,
+            'telnyx',
+            'test-provider-event-telnyx-message-failed',
+            'message.failed',
+            'message',
+            'test-msg-anna-failed',
+            '2026-05-24 06:31:00+00',
+            '2026-05-24 06:31:02+00',
+            'failed',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'failure_code', 'TEST_DELIVERY_FAILED'),
+            'Fake local delivery failure for seed data.',
+            '2026-05-24 06:31:00+00'
+        ),
+        (
+            v_clinic_id,
+            'vapi',
+            'test-provider-event-vapi-call-started',
+            'call.started',
+            'call',
+            'test-call-lucia-booked',
+            '2026-05-19 07:31:00+00',
+            '2026-05-19 07:31:01+00',
+            'processed',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'vapi', 'direction', 'inbound'),
+            null,
+            '2026-05-19 07:31:00+00'
+        ),
+        (
+            v_clinic_id,
+            'vapi',
+            'test-provider-event-vapi-call-ended',
+            'call.ended',
+            'call',
+            'test-call-lucia-booked',
+            '2026-05-19 07:35:20+00',
+            '2026-05-19 07:35:21+00',
+            'processed',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'vapi', 'duration_seconds', 260),
+            null,
+            '2026-05-19 07:35:20+00'
+        ),
+        (
+            null,
+            'telnyx',
+            'test-provider-event-unmapped-message-delivered',
+            'message.delivered',
+            null,
+            null,
+            '2026-05-24 07:00:00+00',
+            null,
+            'received',
+            jsonb_build_object('local_seed', true, 'fake_provider', 'telnyx', 'mapping_status', 'unmapped'),
+            null,
+            '2026-05-24 07:00:00+00'
+        );
 
     INSERT INTO public.chairside_activity_log (
         clinic_id,
