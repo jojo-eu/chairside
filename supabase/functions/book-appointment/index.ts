@@ -36,6 +36,7 @@ type Patient = {
 };
 
 const DEFAULT_TIMEZONE = "Europe/Bratislava";
+const REMINDER_LEAD_TIME_MINUTES = 24 * 60;
 const appointmentSources = new Set<AppointmentSource>([
   "manual",
   "ai_voice",
@@ -52,6 +53,12 @@ function jsonResponse(body: unknown, status = 200) {
 
 function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60_000);
+}
+
+function getReminderScheduledFor(startsAt: Date, now = new Date()) {
+  const scheduledFor = addMinutes(startsAt, -REMINDER_LEAD_TIME_MINUTES);
+
+  return scheduledFor < now ? now : scheduledFor;
 }
 
 function parseStartsAt(startsAt: string) {
@@ -240,6 +247,32 @@ Deno.serve(async (req: Request) =>
 
           console.error("Failed to book appointment:", insertError);
           return createErrorResponse(500, "Failed to book appointment");
+        }
+
+        try {
+          const { error: reminderError } = await supabaseAdmin
+            .from("reminders")
+            .insert({
+              clinic_id,
+              appointment_id: appointment.id,
+              patient_id,
+              scheduled_for: getReminderScheduledFor(startsAt).toISOString(),
+              channel: "sms",
+              status: "pending",
+              template_key: "appointment_confirmation_24h",
+            });
+
+          if (reminderError) {
+            console.warn(
+              "Failed to create appointment reminder:",
+              reminderError,
+            );
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to create appointment reminder:",
+            error,
+          );
         }
 
         const actor = getActivityActor(source, user);
