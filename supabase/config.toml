@@ -176,3 +176,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.book-appointment]
 verify_jwt = false
+[functions.mark-reminder-sent]
+verify_jwt = false
