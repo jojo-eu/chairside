@@ -17,6 +17,7 @@ alter table public.opt_outs enable row level security;
 alter table public.call_logs enable row level security;
 alter table public.provider_events enable row level security;
 alter table public.provider_event_processing_attempts enable row level security;
+alter table public.provider_mappings enable row level security;
 alter table public.companies enable row level security;
 alter table public.contacts enable row level security;
 alter table public.contact_notes enable row level security;
@@ -66,6 +67,9 @@ create policy "Clinic members can view provider events in their clinics" on publ
 
 -- Provider Event Processing Attempts
 create policy "Clinic members can view provider event attempts" on public.provider_event_processing_attempts for select to authenticated using (clinic_id in (select public.current_clinic_ids()));
+
+-- Provider Mappings
+create policy "Clinic members can view provider mappings in their clinics" on public.provider_mappings for select to authenticated using (clinic_id in (select current_clinic_ids.current_clinic_ids from public.current_clinic_ids() current_clinic_ids(current_clinic_ids)));
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);

@@ -122,6 +122,10 @@ grant all on table public.provider_event_processing_attempts to anon;
 grant all on table public.provider_event_processing_attempts to authenticated;
 grant all on table public.provider_event_processing_attempts to service_role;
 
+grant all on table public.provider_mappings to anon;
+grant all on table public.provider_mappings to authenticated;
+grant all on table public.provider_mappings to service_role;
+
 grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
