@@ -16,6 +16,7 @@ type BookAppointmentRequest = {
 };
 
 type AppointmentSource = "manual" | "ai_voice" | "ai_sms" | "imported";
+type ActivityActorType = "user" | "ai" | "system";
 
 type Clinic = {
   id: string;
@@ -82,6 +83,33 @@ function isOverlapError(error: { code?: string; message?: string }) {
     error.message?.includes("appointments_no_overlap") === true ||
     error.message?.includes("conflicting key value violates exclusion constraint") ===
       true;
+}
+
+function getActivityActor(
+  source: AppointmentSource,
+  user?: { id: string; email?: string },
+) {
+  if (source === "manual") {
+    return {
+      actor_type: "user" as ActivityActorType,
+      actor_id: user?.id ?? null,
+      actor_label: user?.email ?? "Používateľ",
+    };
+  }
+
+  if (source === "imported") {
+    return {
+      actor_type: "system" as ActivityActorType,
+      actor_id: null,
+      actor_label: "Import",
+    };
+  }
+
+  return {
+    actor_type: "ai" as ActivityActorType,
+    actor_id: null,
+    actor_label: "AI recepcia",
+  };
 }
 
 Deno.serve(async (req: Request) =>
@@ -212,6 +240,41 @@ Deno.serve(async (req: Request) =>
 
           console.error("Failed to book appointment:", insertError);
           return createErrorResponse(500, "Failed to book appointment");
+        }
+
+        const actor = getActivityActor(source, user);
+        const details = {
+          patient_id,
+          service_id,
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          source,
+          ...(notes ? { notes } : {}),
+        };
+
+        try {
+          const { error: activityLogError } = await supabaseAdmin
+            .from("chairside_activity_log")
+            .insert({
+              clinic_id,
+              ...actor,
+              action: "appointment.created",
+              entity_type: "appointment",
+              entity_id: appointment.id,
+              details,
+            });
+
+          if (activityLogError) {
+            console.warn(
+              "Failed to write appointment activity log:",
+              activityLogError,
+            );
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to write appointment activity log:",
+            error,
+          );
         }
 
         return jsonResponse({ appointment }, 201);
