@@ -24,6 +24,7 @@ import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
+import { BookingTestPage } from "../internal/BookingTestPage";
 import patients from "../patients";
 import reminders from "../reminders";
 import services from "../services";
@@ -275,6 +276,7 @@ const DesktopAdmin = (
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/calls" element={<CallLogList />} />
+        <Route path="/internal/booking-test" element={<BookingTestPage />} />
         {mvpPlaceholderRoutes.map(({ path, title }) => (
           <Route
             key={path}
@@ -353,6 +355,7 @@ const MobileAdmin = (
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/calls" element={<CallLogList />} />
+          <Route path="/internal/booking-test" element={<BookingTestPage />} />
           {mvpPlaceholderRoutes.map(({ path, title }) => (
             <Route
               key={path}
