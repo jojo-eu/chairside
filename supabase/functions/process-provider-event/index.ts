@@ -55,6 +55,28 @@ type MessageRow = {
   metadata: Record<string, unknown> | null;
 };
 
+type OutboundReminderMessage = {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  appointment_id: string;
+  reminder_id: string;
+  channel: string;
+  sent_at: string | null;
+  created_at: string;
+  metadata: Record<string, unknown> | null;
+};
+
+type ExistingInboundMessage = {
+  id: string;
+  clinic_id: string;
+  patient_id: string | null;
+  appointment_id: string | null;
+  reminder_id: string | null;
+  status: string;
+  metadata: Record<string, unknown> | null;
+};
+
 type ProviderMapping = {
   id: string;
   clinic_id: string;
@@ -123,9 +145,10 @@ function addCandidate(
 ) {
   if (!providerIdentifier) return;
 
-  const duplicate = candidates.some((candidate) =>
-    candidate.mapping_type === mappingType &&
-    candidate.provider_identifier === providerIdentifier
+  const duplicate = candidates.some(
+    (candidate) =>
+      candidate.mapping_type === mappingType &&
+      candidate.provider_identifier === providerIdentifier,
   );
 
   if (!duplicate) {
@@ -246,11 +269,14 @@ async function findMapping(provider: Provider, candidates: MappingCandidate[]) {
 }
 
 function isDuplicateIdempotencyKey(error: { code?: string; message?: string }) {
-  return error.code === "23505" ||
+  return (
+    error.code === "23505" ||
     error.message?.includes("provider_event_attempts_idempotency_key_idx") ===
       true ||
-    error.message?.includes("duplicate key value violates unique constraint") ===
-      true;
+    error.message?.includes(
+      "duplicate key value violates unique constraint",
+    ) === true
+  );
 }
 
 function classifySkeleton(providerEvent: ProviderEvent) {
@@ -282,10 +308,12 @@ function classifySkeleton(providerEvent: ProviderEvent) {
 }
 
 function isTelnyxOutboundStatusEvent(providerEvent: ProviderEvent) {
-  return providerEvent.provider === "telnyx" &&
+  return (
+    providerEvent.provider === "telnyx" &&
     ["message.sent", "message.delivered", "message.failed"].includes(
       providerEvent.event_type,
-    );
+    )
+  );
 }
 
 function getTelnyxMessageStatus(eventType: string) {
@@ -296,14 +324,59 @@ function getTelnyxMessageStatus(eventType: string) {
   return null;
 }
 
+function isDuplicateMessageKey(error: { code?: string; message?: string }) {
+  return (
+    error.code === "23505" ||
+    error.message?.includes("messages_provider_message_unique_idx") === true ||
+    error.message?.includes(
+      "duplicate key value violates unique constraint",
+    ) === true
+  );
+}
+
+function normalizeResponseBody(body: string) {
+  return body
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function parseResponseStatus(body: string) {
+  const normalized = normalizeResponseBody(body);
+
+  if (["ano", "yes", "y"].includes(normalized)) {
+    return "confirmed";
+  }
+  if (["nie", "no", "n"].includes(normalized)) {
+    return "declined";
+  }
+
+  return "needs_review";
+}
+
 function extractTelnyxProviderMessageId(payload: JsonObject) {
   const data = nestedObject(payload, "data");
   const dataPayload = nestedObject(data, "payload");
 
-  return stringValue(dataPayload?.id) ??
+  return (
+    stringValue(dataPayload?.id) ??
     stringValue(dataPayload?.message_id) ??
     stringValue(payload.resource_id) ??
-    stringValue(data?.id);
+    stringValue(data?.id)
+  );
+}
+
+function extractTelnyxInboundText(payload: JsonObject) {
+  const dataPayload = nestedObject(nestedObject(payload, "data"), "payload");
+
+  return stringValue(dataPayload?.text) ?? stringValue(dataPayload?.body);
+}
+
+function extractTelnyxPayloadPhone(payload: JsonObject, field: "from" | "to") {
+  const dataPayload = nestedObject(nestedObject(payload, "data"), "payload");
+
+  return stringValue(dataPayload?.[field]);
 }
 
 async function loadProviderEventPayload(providerEventId: string) {
@@ -390,12 +463,13 @@ async function processTelnyxOutboundStatus(
     update.sent_at = finishedAt;
   }
 
-  const { data: updatedMessage, error: updateMessageError } = await supabaseAdmin
-    .from("messages")
-    .update(update)
-    .eq("id", message.id)
-    .select("id, status, sent_at, metadata")
-    .single<MessageRow>();
+  const { data: updatedMessage, error: updateMessageError } =
+    await supabaseAdmin
+      .from("messages")
+      .update(update)
+      .eq("id", message.id)
+      .select("id, status, sent_at, metadata")
+      .single<MessageRow>();
 
   if (updateMessageError || !updatedMessage) {
     throw updateMessageError ?? new Error("Message status update failed");
@@ -413,6 +487,286 @@ async function processTelnyxOutboundStatus(
       message: {
         id: updatedMessage.id,
         status: updatedMessage.status,
+      },
+    },
+  };
+}
+
+async function loadExistingInboundMessage(providerMessageId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("messages")
+    .select(
+      "id, clinic_id, patient_id, appointment_id, reminder_id, status, metadata",
+    )
+    .eq("provider", "telnyx")
+    .eq("provider_message_id", providerMessageId)
+    .eq("direction", "inbound")
+    .maybeSingle<ExistingInboundMessage>();
+
+  if (error) throw error;
+
+  return data;
+}
+
+async function processTelnyxInboundResponse(
+  providerEvent: ProviderEvent,
+  finishedAt: string,
+) {
+  if (
+    providerEvent.provider !== "telnyx" ||
+    providerEvent.event_type !== "message.received"
+  ) {
+    return null;
+  }
+
+  const payload = await loadProviderEventPayload(providerEvent.id);
+  const providerMessageId = extractTelnyxProviderMessageId(payload);
+  const inboundText = extractTelnyxInboundText(payload);
+  const patientPhone = extractTelnyxPayloadPhone(payload, "from");
+  const clinicPhone = extractTelnyxPayloadPhone(payload, "to");
+
+  if (!providerMessageId) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "provider_message_id_not_found",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+      },
+    };
+  }
+
+  if (!inboundText) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "empty_inbound_body",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+      },
+    };
+  }
+
+  const existingInboundMessage =
+    await loadExistingInboundMessage(providerMessageId);
+  if (existingInboundMessage) {
+    return {
+      attemptStatus: "succeeded" as const,
+      providerEventStatus: "processed" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "duplicate_inbound_message",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        message: {
+          id: existingInboundMessage.id,
+          status: existingInboundMessage.status,
+        },
+      },
+    };
+  }
+
+  if (!patientPhone) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "patient_phone_not_found",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+      },
+    };
+  }
+
+  const { data: patient, error: patientError } = await supabaseAdmin
+    .from("patients")
+    .select("id")
+    .eq("clinic_id", providerEvent.clinic_id)
+    .eq("phone", patientPhone)
+    .maybeSingle<{ id: string }>();
+
+  if (patientError) throw patientError;
+
+  if (!patient) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "patient_not_found",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        clinic_phone: clinicPhone,
+      },
+    };
+  }
+
+  const { data: candidates, error: candidateError } = await supabaseAdmin
+    .from("messages")
+    .select(
+      "id, clinic_id, patient_id, appointment_id, reminder_id, channel, sent_at, created_at, metadata",
+    )
+    .eq("clinic_id", providerEvent.clinic_id)
+    .eq("provider", "telnyx")
+    .eq("direction", "outbound")
+    .eq("patient_id", patient.id)
+    .not("reminder_id", "is", null)
+    .not("appointment_id", "is", null)
+    .in("status", ["sent", "delivered"])
+    .order("sent_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(2)
+    .returns<OutboundReminderMessage[]>();
+
+  if (candidateError) throw candidateError;
+
+  if (!candidates || candidates.length === 0) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "no_safe_reminder_match",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        patient_id: patient.id,
+        clinic_phone: clinicPhone,
+      },
+    };
+  }
+
+  if (candidates.length > 1) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "ambiguous_match",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        patient_id: patient.id,
+        candidate_count: candidates.length,
+        candidate_message_ids: candidates.map((candidate) => candidate.id),
+      },
+    };
+  }
+
+  const outboundMessage = candidates[0];
+  const parsedResponse = parseResponseStatus(inboundText);
+  const inboundMetadata: Record<string, unknown> = {
+    parsed_response: parsedResponse,
+    provider_event_id: providerEvent.id,
+    matched_outbound_message_id: outboundMessage.id,
+  };
+  if (
+    isObject(outboundMessage.metadata) &&
+    outboundMessage.metadata.template_key
+  ) {
+    inboundMetadata.template_key = outboundMessage.metadata.template_key;
+  }
+
+  const { data: inboundMessage, error: inboundMessageError } =
+    await supabaseAdmin
+      .from("messages")
+      .insert({
+        clinic_id: providerEvent.clinic_id,
+        patient_id: outboundMessage.patient_id,
+        appointment_id: outboundMessage.appointment_id,
+        reminder_id: outboundMessage.reminder_id,
+        direction: "inbound",
+        channel:
+          outboundMessage.channel === "sms" ? outboundMessage.channel : "sms",
+        provider: "telnyx",
+        provider_message_id: providerMessageId,
+        body: inboundText,
+        status: "received",
+        received_at: finishedAt,
+        metadata: inboundMetadata,
+      })
+      .select("id, status, metadata")
+      .single<MessageRow>();
+
+  if (inboundMessageError) {
+    if (isDuplicateMessageKey(inboundMessageError)) {
+      const duplicateMessage =
+        await loadExistingInboundMessage(providerMessageId);
+
+      return {
+        attemptStatus: "succeeded" as const,
+        providerEventStatus: "processed" as const,
+        result: {
+          processor: "telnyx_inbound_response",
+          outcome: "duplicate_inbound_message",
+          provider: providerEvent.provider,
+          event_type: providerEvent.event_type,
+          provider_message_id: providerMessageId,
+          message: duplicateMessage
+            ? { id: duplicateMessage.id, status: duplicateMessage.status }
+            : null,
+        },
+      };
+    }
+
+    throw inboundMessageError;
+  }
+
+  if (!inboundMessage) {
+    throw new Error("Inbound message insert failed");
+  }
+
+  const { data: updatedReminder, error: reminderUpdateError } =
+    await supabaseAdmin
+      .from("reminders")
+      .update({
+        status: "responded",
+        response_status: parsedResponse,
+        response_received_at: finishedAt,
+      })
+      .eq("id", outboundMessage.reminder_id)
+      .eq("clinic_id", providerEvent.clinic_id)
+      .neq("status", "cancelled")
+      .select("id, status, response_status, response_received_at")
+      .single();
+
+  if (reminderUpdateError || !updatedReminder) {
+    throw reminderUpdateError ?? new Error("Reminder response update failed");
+  }
+
+  return {
+    attemptStatus: "succeeded" as const,
+    providerEventStatus: "processed" as const,
+    result: {
+      processor: "telnyx_inbound_response",
+      outcome: "reminder_response_recorded",
+      provider: providerEvent.provider,
+      event_type: providerEvent.event_type,
+      provider_message_id: providerMessageId,
+      parsed_response: parsedResponse,
+      matching: {
+        strategy: "latest_outbound_for_patient",
+        note: "Local skeleton match constrained by clinic, patient phone, outbound reminder message, and sent/delivered status.",
+        patient_phone: patientPhone,
+        clinic_phone: clinicPhone,
+      },
+      message: {
+        id: inboundMessage.id,
+        status: inboundMessage.status,
+      },
+      reminder: {
+        id: updatedReminder.id,
+        status: updatedReminder.status,
+        response_status: updatedReminder.response_status,
       },
     },
   };
@@ -477,13 +831,11 @@ Deno.serve(async (req: Request) =>
         }
 
         let providerEvent = visibleProviderEvent;
-        let autoMapping:
-          | {
-            matched_mapping: ReturnType<typeof summarizeMapping>;
-            matched_candidate: MappingCandidate;
-            candidates_tried: MappingCandidate[];
-          }
-          | null = null;
+        let autoMapping: {
+          matched_mapping: ReturnType<typeof summarizeMapping>;
+          matched_candidate: MappingCandidate;
+          candidates_tried: MappingCandidate[];
+        } | null = null;
 
         if (!providerEvent) {
           // Admin access is intentional for this narrow mapping step:
@@ -585,8 +937,7 @@ Deno.serve(async (req: Request) =>
           });
         }
 
-        const idempotencyKey =
-          `${providerEvent.provider}:${providerEvent.id}:${action}`;
+        const idempotencyKey = `${providerEvent.provider}:${providerEvent.id}:${action}`;
         const startedAt = new Date().toISOString();
 
         const { data: attempt, error: attemptError } = await supabaseAdmin
@@ -629,7 +980,10 @@ Deno.serve(async (req: Request) =>
             });
           }
 
-          console.error("Failed to create provider processing attempt:", attemptError);
+          console.error(
+            "Failed to create provider processing attempt:",
+            attemptError,
+          );
           return createErrorResponse(
             500,
             "Failed to create provider processing attempt",
@@ -642,11 +996,15 @@ Deno.serve(async (req: Request) =>
             providerEvent,
             finishedAt,
           );
-          const processorResult = telnyxStatusResult ?? {
-            attemptStatus: "ignored" as const,
-            providerEventStatus: "ignored" as const,
-            result: classifySkeleton(providerEvent),
-          };
+          const telnyxInboundResponseResult = telnyxStatusResult
+            ? null
+            : await processTelnyxInboundResponse(providerEvent, finishedAt);
+          const processorResult = telnyxStatusResult ??
+            telnyxInboundResponseResult ?? {
+              attemptStatus: "ignored" as const,
+              providerEventStatus: "ignored" as const,
+              result: classifySkeleton(providerEvent),
+            };
 
           const { data: updatedAttempt, error: updateAttemptError } =
             await supabaseAdmin
@@ -691,9 +1049,10 @@ Deno.serve(async (req: Request) =>
             auto_mapping: autoMapping,
           });
         } catch (error) {
-          const message = error instanceof Error
-            ? error.message
-            : "Unexpected processor skeleton error";
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unexpected processor skeleton error";
 
           await supabaseAdmin
             .from("provider_event_processing_attempts")
