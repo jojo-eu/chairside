@@ -34,6 +34,21 @@ type InboundResponseMessage = {
   metadata: MessageMetadata;
 };
 
+type InboundResponseContext = {
+  patient: {
+    name: string;
+    phone: string | null;
+  } | null;
+  appointment: {
+    starts_at: string | null;
+  } | null;
+  reminder: {
+    status: string;
+    response_status: string | null;
+    response_received_at: string | null;
+  } | null;
+};
+
 const dateFormatter = new Intl.DateTimeFormat("sk-SK", {
   dateStyle: "short",
   timeStyle: "medium",
@@ -64,6 +79,12 @@ export const InboundResponsesPage = () => {
   const [messages, setMessages] = useState<InboundResponseMessage[]>([]);
   const [showOnlyReview, setShowOnlyReview] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
+    null,
+  );
+  const [detailContext, setDetailContext] =
+    useState<InboundResponseContext | null>(null);
+  const [detailContextLoading, setDetailContextLoading] = useState(false);
+  const [detailContextError, setDetailContextError] = useState<string | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
@@ -110,6 +131,91 @@ export const InboundResponsesPage = () => {
           getMetadataBoolean(message.metadata, "needs_staff_review") === true,
       )
     : messages;
+  const selectedMessage =
+    visibleMessages.find((message) => message.id === selectedMessageId) ?? null;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDetailContext = async () => {
+      setDetailContext(null);
+      setDetailContextError(null);
+
+      if (!selectedMessage) {
+        setDetailContextLoading(false);
+        return;
+      }
+
+      setDetailContextLoading(true);
+
+      const [patientResult, appointmentResult, reminderResult] =
+        await Promise.all([
+          selectedMessage.patient_id
+            ? supabase
+                .from("patients")
+                .select("first_name, last_name, phone")
+                .eq("id", selectedMessage.patient_id)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+          selectedMessage.appointment_id
+            ? supabase
+                .from("appointments")
+                .select("starts_at")
+                .eq("id", selectedMessage.appointment_id)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+          selectedMessage.reminder_id
+            ? supabase
+                .from("reminders")
+                .select("status, response_status, response_received_at")
+                .eq("id", selectedMessage.reminder_id)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+      if (!active) {
+        return;
+      }
+
+      const errors = [
+        patientResult.error?.message,
+        appointmentResult.error?.message,
+        reminderResult.error?.message,
+      ].filter(Boolean);
+
+      const patient = patientResult.data
+        ? {
+            name: [patientResult.data.first_name, patientResult.data.last_name]
+              .filter(Boolean)
+              .join(" "),
+            phone: patientResult.data.phone ?? null,
+          }
+        : null;
+
+      setDetailContext({
+        patient,
+        appointment: appointmentResult.data
+          ? { starts_at: appointmentResult.data.starts_at ?? null }
+          : null,
+        reminder: reminderResult.data
+          ? {
+              status: reminderResult.data.status,
+              response_status: reminderResult.data.response_status ?? null,
+              response_received_at:
+                reminderResult.data.response_received_at ?? null,
+            }
+          : null,
+      });
+      setDetailContextError(errors.length > 0 ? errors.join("; ") : null);
+      setDetailContextLoading(false);
+    };
+
+    void loadDetailContext();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedMessage, selectedMessageId, supabase]);
 
   return (
     <div className="space-y-6 pb-10">
@@ -335,33 +441,60 @@ export const InboundResponsesPage = () => {
 
                             <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
                               {[
+                                ["patient name", detailContext?.patient?.name],
                                 [
-                                  "Provider message ID",
+                                  "patient phone",
+                                  detailContext?.patient?.phone,
+                                ],
+                                [
+                                  "appointments.starts_at",
+                                  formatDate(
+                                    detailContext?.appointment?.starts_at ??
+                                      null,
+                                  ),
+                                ],
+                                [
+                                  "reminder status",
+                                  detailContext?.reminder?.status,
+                                ],
+                                [
+                                  "reminder response_status",
+                                  detailContext?.reminder?.response_status,
+                                ],
+                                [
+                                  "reminder response_received_at",
+                                  formatDate(
+                                    detailContext?.reminder
+                                      ?.response_received_at ?? null,
+                                  ),
+                                ],
+                                [
+                                  "provider_message_id",
                                   message.provider_message_id,
                                 ],
-                                ["Text", message.body],
-                                ["Parsed response", parsedResponse],
+                                ["body/text", message.body],
+                                ["parsed_response", parsedResponse],
                                 [
-                                  "Repeat response",
+                                  "repeat_response",
                                   repeatResponse ? "true" : "false",
                                 ],
                                 [
-                                  "Previous response status",
+                                  "previous_response_status",
                                   previousResponseStatus,
                                 ],
-                                ["Repeat outcome", repeatOutcome],
+                                ["repeat_outcome", repeatOutcome],
                                 [
-                                  "Needs staff review",
+                                  "needs_staff_review",
                                   needsStaffReview ? "true" : "false",
                                 ],
                                 [
-                                  "Matched outbound message ID",
+                                  "matched_outbound_message_id",
                                   matchedOutbound,
                                 ],
-                                ["Reminder ID", message.reminder_id],
-                                ["Patient ID", message.patient_id],
-                                ["Appointment ID", message.appointment_id],
-                                ["Clinic ID", message.clinic_id],
+                                ["reminder_id", message.reminder_id],
+                                ["patient_id", message.patient_id],
+                                ["appointment_id", message.appointment_id],
+                                ["clinic_id", message.clinic_id],
                               ].map(([label, value]) => (
                                 <div key={label} className="space-y-1">
                                   <div className="text-xs font-medium uppercase text-muted-foreground">
@@ -373,6 +506,20 @@ export const InboundResponsesPage = () => {
                                 </div>
                               ))}
                             </div>
+
+                            {detailContextLoading ? (
+                              <p className="text-sm text-muted-foreground">
+                                Načítavam kontext pacienta, termínu a
+                                pripomienky...
+                              </p>
+                            ) : null}
+
+                            {detailContextError ? (
+                              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                                Kontext sa nepodarilo načítať úplne:{" "}
+                                {detailContextError}
+                              </div>
+                            ) : null}
 
                             <div className="space-y-1">
                               <div className="text-xs font-medium uppercase text-muted-foreground">
