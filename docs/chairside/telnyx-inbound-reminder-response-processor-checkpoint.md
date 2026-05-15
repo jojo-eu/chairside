@@ -234,6 +234,21 @@ Additional local validation in this slice confirmed:
 - The no-match path created no inbound message and updated no reminder.
 - A fake `NIE` response parsed as `declined`.
 
+Parser validation:
+
+- `NIE` was validated as `declined`.
+- A non-standard response, `Možno prídem`, was validated as `needs_review`.
+- Both parser validation paths used fake local Telnyx `message.received` provider events.
+- Both paths created inbound `messages` rows with `metadata.parsed_response`.
+- The matching reminder `response_status` was updated to the parsed value.
+- Local validation reused the same reminder, so later responses overwrote `response_status`.
+- Production rules should prevent unsafe repeated reminder updates unless the repeated update is explicitly idempotent and tied to the same provider event/message context.
+- Duplicate/idempotency behavior remains covered by the prior duplicate validation.
+- No appointments were updated.
+- No `call_logs` rows were updated.
+- No provider API calls were made.
+- No outbound replies were sent.
+
 ## Safety Notes
 
 Safety boundaries:
