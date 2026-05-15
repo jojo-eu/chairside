@@ -14,6 +14,10 @@ grant all on function public.current_clinic_ids() to anon;
 grant all on function public.current_clinic_ids() to authenticated;
 grant all on function public.current_clinic_ids() to service_role;
 
+revoke all on function public.resolve_inbound_response_keep_existing(uuid, text, text) from public;
+revoke all on function public.resolve_inbound_response_keep_existing(uuid, text, text) from anon;
+grant execute on function public.resolve_inbound_response_keep_existing(uuid, text, text) to authenticated;
+
 grant all on function public.cleanup_note_attachments() to anon;
 grant all on function public.cleanup_note_attachments() to authenticated;
 grant all on function public.cleanup_note_attachments() to service_role;
