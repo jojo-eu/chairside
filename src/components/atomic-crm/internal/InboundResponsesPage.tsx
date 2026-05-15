@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,9 @@ export const InboundResponsesPage = () => {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [messages, setMessages] = useState<InboundResponseMessage[]>([]);
   const [showOnlyReview, setShowOnlyReview] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -170,6 +173,7 @@ export const InboundResponsesPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Detail</TableHead>
               <TableHead>Provider</TableHead>
               <TableHead>Provider message ID</TableHead>
               <TableHead>Text</TableHead>
@@ -191,13 +195,13 @@ export const InboundResponsesPage = () => {
           <TableBody data-testid="inbound-responses-table">
             {loading ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-muted-foreground">
+                <TableCell colSpan={17} className="text-muted-foreground">
                   Načítavam inbound odpovede...
                 </TableCell>
               </TableRow>
             ) : visibleMessages.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-muted-foreground">
+                <TableCell colSpan={17} className="text-muted-foreground">
                   {showOnlyReview
                     ? "Žiadne inbound odpovede vyžadujúce review nie sú viditeľné pre aktuálne prihlásenie."
                     : "Žiadne inbound odpovede naviazané na pripomienky nie sú viditeľné pre aktuálne prihlásenie."}
@@ -230,58 +234,159 @@ export const InboundResponsesPage = () => {
                 );
 
                 return (
-                  <TableRow
-                    key={message.id}
-                    data-testid="inbound-response-row"
-                    className={needsStaffReview ? "bg-amber-50/60" : undefined}
-                  >
-                    <TableCell>
-                      <Badge variant="outline">{message.provider ?? "-"}</Badge>
-                    </TableCell>
-                    <TableCell className="max-w-64 whitespace-normal break-all font-mono text-xs">
-                      {message.provider_message_id}
-                    </TableCell>
-                    <TableCell className="max-w-72 whitespace-normal break-words">
-                      {message.body}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{message.status}</Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(message.received_at)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{parsedResponse ?? "-"}</Badge>
-                    </TableCell>
-                    <TableCell>{repeatResponse ? "Áno" : "Nie"}</TableCell>
-                    <TableCell>{previousResponseStatus ?? "-"}</TableCell>
-                    <TableCell>{repeatOutcome ?? "-"}</TableCell>
-                    <TableCell>
-                      {needsStaffReview ? (
-                        <Badge variant="destructive">Vyžaduje review</Badge>
-                      ) : (
-                        <Badge variant="outline">Nie</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
-                      {matchedOutbound ?? "-"}
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
-                      {message.reminder_id}
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
-                      {message.patient_id}
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
-                      {message.appointment_id}
-                    </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
-                      {message.clinic_id}
-                    </TableCell>
-                    <TableCell>
-                      <pre className="max-h-24 max-w-80 overflow-auto rounded-md bg-muted/50 p-2 text-xs leading-relaxed">
-                        {getMetadataPreview(message.metadata)}
-                      </pre>
-                    </TableCell>
-                  </TableRow>
+                  <Fragment key={message.id}>
+                    <TableRow
+                      data-testid="inbound-response-row"
+                      className={
+                        needsStaffReview ? "bg-amber-50/60" : undefined
+                      }
+                    >
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-pressed={selectedMessageId === message.id}
+                          onClick={() =>
+                            setSelectedMessageId((current) =>
+                              current === message.id ? null : message.id,
+                            )
+                          }
+                        >
+                          {selectedMessageId === message.id
+                            ? "Skryť detail"
+                            : "Zobraziť detail"}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {message.provider ?? "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-64 whitespace-normal break-all font-mono text-xs">
+                        {message.provider_message_id}
+                      </TableCell>
+                      <TableCell className="max-w-72 whitespace-normal break-words">
+                        {message.body}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{message.status}</Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(message.received_at)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{parsedResponse ?? "-"}</Badge>
+                      </TableCell>
+                      <TableCell>{repeatResponse ? "Áno" : "Nie"}</TableCell>
+                      <TableCell>{previousResponseStatus ?? "-"}</TableCell>
+                      <TableCell>{repeatOutcome ?? "-"}</TableCell>
+                      <TableCell>
+                        {needsStaffReview ? (
+                          <Badge variant="destructive">Vyžaduje review</Badge>
+                        ) : (
+                          <Badge variant="outline">Nie</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
+                        {matchedOutbound ?? "-"}
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
+                        {message.reminder_id}
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
+                        {message.patient_id}
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
+                        {message.appointment_id}
+                      </TableCell>
+                      <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
+                        {message.clinic_id}
+                      </TableCell>
+                      <TableCell>
+                        <pre className="max-h-24 max-w-80 overflow-auto rounded-md bg-muted/50 p-2 text-xs leading-relaxed">
+                          {getMetadataPreview(message.metadata)}
+                        </pre>
+                      </TableCell>
+                    </TableRow>
+                    {selectedMessageId === message.id ? (
+                      <TableRow data-testid="inbound-response-detail-row">
+                        <TableCell colSpan={17} className="bg-muted/20 p-4">
+                          <div
+                            className="space-y-4 rounded-lg border bg-background p-4"
+                            data-testid="inbound-response-detail"
+                          >
+                            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <h2 className="text-lg font-semibold">
+                                  Detail inbound odpovede
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                  Staff resolution actions are not implemented
+                                  yet.
+                                </p>
+                              </div>
+                              {needsStaffReview ? (
+                                <Badge variant="destructive">
+                                  Vyžaduje review
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">Bez review</Badge>
+                              )}
+                            </div>
+
+                            <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+                              {[
+                                [
+                                  "Provider message ID",
+                                  message.provider_message_id,
+                                ],
+                                ["Text", message.body],
+                                ["Parsed response", parsedResponse],
+                                [
+                                  "Repeat response",
+                                  repeatResponse ? "true" : "false",
+                                ],
+                                [
+                                  "Previous response status",
+                                  previousResponseStatus,
+                                ],
+                                ["Repeat outcome", repeatOutcome],
+                                [
+                                  "Needs staff review",
+                                  needsStaffReview ? "true" : "false",
+                                ],
+                                [
+                                  "Matched outbound message ID",
+                                  matchedOutbound,
+                                ],
+                                ["Reminder ID", message.reminder_id],
+                                ["Patient ID", message.patient_id],
+                                ["Appointment ID", message.appointment_id],
+                                ["Clinic ID", message.clinic_id],
+                              ].map(([label, value]) => (
+                                <div key={label} className="space-y-1">
+                                  <div className="text-xs font-medium uppercase text-muted-foreground">
+                                    {label}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-all font-mono text-xs">
+                                    {value ?? "-"}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="text-xs font-medium uppercase text-muted-foreground">
+                                Full metadata JSON
+                              </div>
+                              <pre className="max-h-72 overflow-auto rounded-md bg-muted/50 p-3 text-xs leading-relaxed">
+                                {getMetadataPreview(message.metadata)}
+                              </pre>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </Fragment>
                 );
               })
             )}
