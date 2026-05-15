@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -61,6 +62,7 @@ const getMetadataPreview = (metadata: MessageMetadata) =>
 export const InboundResponsesPage = () => {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [messages, setMessages] = useState<InboundResponseMessage[]>([]);
+  const [showOnlyReview, setShowOnlyReview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +97,17 @@ export const InboundResponsesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const reviewRowsCount = messages.filter(
+    (message) =>
+      getMetadataBoolean(message.metadata, "needs_staff_review") === true,
+  ).length;
+  const visibleMessages = showOnlyReview
+    ? messages.filter(
+        (message) =>
+          getMetadataBoolean(message.metadata, "needs_staff_review") === true,
+      )
+    : messages;
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -125,6 +138,23 @@ export const InboundResponsesPage = () => {
         <strong>Interný nástroj:</strong> stránka je iba na čítanie. Nerobí
         staff review, neposiela SMS odpovede, nevolá providerov a nezobrazuje
         raw payloady z <code>provider_events</code>.
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 text-sm md:flex-row md:items-center md:justify-between">
+        <label className="flex items-center gap-2 font-medium">
+          <Switch
+            checked={showOnlyReview}
+            onCheckedChange={setShowOnlyReview}
+            aria-label="Iba vyžaduje review"
+            data-testid="inbound-responses-review-toggle"
+          />
+          Iba vyžaduje review
+        </label>
+        <div className="flex flex-wrap gap-2 text-muted-foreground">
+          <Badge variant="outline">Načítané: {messages.length}</Badge>
+          <Badge variant="outline">Vyžaduje review: {reviewRowsCount}</Badge>
+          <Badge variant="outline">Zobrazené: {visibleMessages.length}</Badge>
+        </div>
       </div>
 
       {error ? (
@@ -165,15 +195,16 @@ export const InboundResponsesPage = () => {
                   Načítavam inbound odpovede...
                 </TableCell>
               </TableRow>
-            ) : messages.length === 0 ? (
+            ) : visibleMessages.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={16} className="text-muted-foreground">
-                  Žiadne inbound odpovede naviazané na pripomienky nie sú
-                  viditeľné pre aktuálne prihlásenie.
+                  {showOnlyReview
+                    ? "Žiadne inbound odpovede vyžadujúce review nie sú viditeľné pre aktuálne prihlásenie."
+                    : "Žiadne inbound odpovede naviazané na pripomienky nie sú viditeľné pre aktuálne prihlásenie."}
                 </TableCell>
               </TableRow>
             ) : (
-              messages.map((message) => {
+              visibleMessages.map((message) => {
                 const parsedResponse = getMetadataString(
                   message.metadata,
                   "parsed_response",
