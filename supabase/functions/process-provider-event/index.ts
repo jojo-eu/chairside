@@ -77,6 +77,13 @@ type ExistingInboundMessage = {
   metadata: Record<string, unknown> | null;
 };
 
+type ReminderResponseState = {
+  id: string;
+  status: string;
+  response_status: string | null;
+  response_received_at: string | null;
+};
+
 type ProviderMapping = {
   id: string;
   clinic_id: string;
@@ -664,11 +671,51 @@ async function processTelnyxInboundResponse(
 
   const outboundMessage = candidates[0];
   const parsedResponse = parseResponseStatus(inboundText);
+  const { data: reminder, error: reminderLookupError } = await supabaseAdmin
+    .from("reminders")
+    .select("id, status, response_status, response_received_at")
+    .eq("id", outboundMessage.reminder_id)
+    .eq("clinic_id", providerEvent.clinic_id)
+    .single<ReminderResponseState>();
+
+  if (reminderLookupError || !reminder) {
+    throw reminderLookupError ?? new Error("Reminder lookup failed");
+  }
+
+  if (reminder.status === "cancelled") {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: "reminder_cancelled",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        reminder_id: reminder.id,
+      },
+    };
+  }
+
+  const isRepeatResponse =
+    reminder.status === "responded" || reminder.response_status !== null;
+  const repeatOutcome = !isRepeatResponse
+    ? null
+    : reminder.response_status === parsedResponse
+      ? "repeat_same_response"
+      : "repeat_conflicting_response";
+  const needsStaffReview = repeatOutcome === "repeat_conflicting_response";
   const inboundMetadata: Record<string, unknown> = {
     parsed_response: parsedResponse,
     provider_event_id: providerEvent.id,
     matched_outbound_message_id: outboundMessage.id,
+    repeat_response: isRepeatResponse,
   };
+  if (isRepeatResponse) {
+    inboundMetadata.previous_response_status = reminder.response_status;
+    inboundMetadata.repeat_outcome = repeatOutcome;
+    inboundMetadata.needs_staff_review = needsStaffReview;
+  }
   if (
     isObject(outboundMessage.metadata) &&
     outboundMessage.metadata.template_key
@@ -723,6 +770,41 @@ async function processTelnyxInboundResponse(
 
   if (!inboundMessage) {
     throw new Error("Inbound message insert failed");
+  }
+
+  if (isRepeatResponse) {
+    return {
+      attemptStatus: "succeeded" as const,
+      providerEventStatus: "processed" as const,
+      result: {
+        processor: "telnyx_inbound_response",
+        outcome: repeatOutcome,
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        parsed_response: parsedResponse,
+        matching: {
+          strategy: "latest_outbound_for_patient",
+          note: "Repeat response recorded for audit without overwriting existing reminder response_status.",
+          patient_phone: patientPhone,
+          clinic_phone: clinicPhone,
+        },
+        message: {
+          id: inboundMessage.id,
+          status: inboundMessage.status,
+        },
+        reminder: {
+          id: reminder.id,
+          status: reminder.status,
+          response_status: reminder.response_status,
+        },
+        repeat_response: {
+          previous_response_status: reminder.response_status,
+          repeat_outcome: repeatOutcome,
+          needs_staff_review: needsStaffReview,
+        },
+      },
+    };
   }
 
   const { data: updatedReminder, error: reminderUpdateError } =
