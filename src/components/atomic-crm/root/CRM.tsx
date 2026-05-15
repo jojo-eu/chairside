@@ -70,6 +70,7 @@ import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
 import { CompanyShow } from "../companies/CompanyShow.tsx";
 import { NoteShowPage } from "../notes/NoteShowPage.tsx";
+import { InboundResponsesPage } from "../internal/InboundResponsesPage";
 
 const defaultStore = localStorageStore(undefined, "CRM");
 
@@ -280,7 +281,14 @@ const DesktopAdmin = (
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/calls" element={<CallLogList />} />
         <Route path="/internal/booking-test" element={<BookingTestPage />} />
-        <Route path="/internal/provider-events" element={<ProviderEventsPage />} />
+        <Route
+          path="/internal/provider-events"
+          element={<ProviderEventsPage />}
+        />
+        <Route
+          path="/internal/inbound-responses"
+          element={<InboundResponsesPage />}
+        />
         <Route
           path="/internal/provider-mappings"
           element={<ProviderMappingsPage />}
@@ -368,7 +376,14 @@ const MobileAdmin = (
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/calls" element={<CallLogList />} />
           <Route path="/internal/booking-test" element={<BookingTestPage />} />
-          <Route path="/internal/provider-events" element={<ProviderEventsPage />} />
+          <Route
+            path="/internal/provider-events"
+            element={<ProviderEventsPage />}
+          />
+          <Route
+            path="/internal/inbound-responses"
+            element={<InboundResponsesPage />}
+          />
           <Route
             path="/internal/provider-mappings"
             element={<ProviderMappingsPage />}
