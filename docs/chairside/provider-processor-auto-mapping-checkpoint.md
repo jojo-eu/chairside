@@ -130,6 +130,26 @@ Confirmed Telnyx auto-mapping flow:
 - No `appointments` rows changed.
 - No `call_logs` rows changed.
 
+Confirmed Vapi auto-mapping flow:
+
+- Created a fake Vapi provider event through `vapi-webhook`.
+- The fake payload included `payload.message.assistant.id = "test-vapi-assistant-katarina"`.
+- The initial provider event had `clinic_id = null`.
+- Calling `process-provider-event` auto-mapped `clinic_id` through `provider_mappings`.
+- The matched mapping was the seeded Vapi `assistant_id` mapping.
+- The matched candidate source was `payload.message.assistant.id`.
+- Classify-only completed after mapping.
+- The provider event `processing_status` became `ignored`.
+- One `provider_event_processing_attempts` row was created.
+- The attempt status became `ignored`.
+- A second call returned `status = "duplicate"`.
+- The attempt count stayed `1`.
+- No `call_logs` rows changed.
+- No `reminders` rows changed.
+- No `messages` rows changed.
+- No `appointments` rows changed.
+- No real Vapi API calls were made.
+
 Unknown mapping validation:
 
 - A fake Telnyx event with `payload.data.payload.to = "+421999999999"` returned HTTP `404`.
@@ -171,7 +191,6 @@ Security boundaries:
 - There is still no real provider business processing.
 - The processor itself does not enforce Telnyx signature verification.
 - The processor itself does not enforce Vapi auth or signature verification.
-- Vapi auto-mapping was not part of this checkpoint's validation.
 - Phone numbers are matched exactly after trimming; there is no provider-specific normalization yet.
 - Mapping, attempt creation, and provider-event status update are not wrapped in a single DB transaction/RPC.
 - There is no retry queue or scheduler.
@@ -181,11 +200,10 @@ Security boundaries:
 
 Recommended next steps:
 
-1. Add Vapi auto-mapping validation with a fake assistant id payload if desired.
-2. Consider a database RPC or transaction helper before real business side effects are introduced.
-3. Begin a Telnyx message status processor skeleton only after signature, mapping, and idempotency rules are explicit.
-4. Add Telnyx inbound response processing only after reminder/message matching rules are explicit.
-5. Keep Vapi call-log processing staged behind Vapi auth and mapping validation.
+1. Consider a database RPC or transaction helper before real business side effects are introduced.
+2. Begin a Telnyx message status processor skeleton only after signature, mapping, and idempotency rules are explicit.
+3. Add Telnyx inbound response processing only after reminder/message matching rules are explicit.
+4. Keep Vapi call-log processing staged behind Vapi auth and mapping validation.
 
 The next production-leaning slice should still avoid broad business mutation until trust, mapping, and idempotency boundaries are all stable.
 
