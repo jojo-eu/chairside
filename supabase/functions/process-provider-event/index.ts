@@ -48,6 +48,13 @@ type ProcessingAttempt = {
   error_message: string | null;
 };
 
+type MessageRow = {
+  id: string;
+  status: string;
+  sent_at: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
 type ProviderMapping = {
   id: string;
   clinic_id: string;
@@ -274,6 +281,143 @@ function classifySkeleton(providerEvent: ProviderEvent) {
   };
 }
 
+function isTelnyxOutboundStatusEvent(providerEvent: ProviderEvent) {
+  return providerEvent.provider === "telnyx" &&
+    ["message.sent", "message.delivered", "message.failed"].includes(
+      providerEvent.event_type,
+    );
+}
+
+function getTelnyxMessageStatus(eventType: string) {
+  if (eventType === "message.sent") return "sent";
+  if (eventType === "message.delivered") return "delivered";
+  if (eventType === "message.failed") return "failed";
+
+  return null;
+}
+
+function extractTelnyxProviderMessageId(payload: JsonObject) {
+  const data = nestedObject(payload, "data");
+  const dataPayload = nestedObject(data, "payload");
+
+  return stringValue(dataPayload?.id) ??
+    stringValue(dataPayload?.message_id) ??
+    stringValue(payload.resource_id) ??
+    stringValue(data?.id);
+}
+
+async function loadProviderEventPayload(providerEventId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("provider_events")
+    .select("payload")
+    .eq("id", providerEventId)
+    .single<{ payload: JsonObject }>();
+
+  if (error || !data?.payload || !isObject(data.payload)) {
+    throw error ?? new Error("Provider event payload not found");
+  }
+
+  return data.payload;
+}
+
+async function processTelnyxOutboundStatus(
+  providerEvent: ProviderEvent,
+  finishedAt: string,
+) {
+  if (!isTelnyxOutboundStatusEvent(providerEvent)) return null;
+
+  const payload = await loadProviderEventPayload(providerEvent.id);
+  const providerMessageId = extractTelnyxProviderMessageId(payload);
+  const messageStatus = getTelnyxMessageStatus(providerEvent.event_type);
+
+  if (!providerMessageId || !messageStatus) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_outbound_status",
+        outcome: "provider_message_id_not_found",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+      },
+    };
+  }
+
+  const { data: messages, error: messageLookupError } = await supabaseAdmin
+    .from("messages")
+    .select("id, status, sent_at, metadata")
+    .eq("clinic_id", providerEvent.clinic_id)
+    .eq("provider", "telnyx")
+    .eq("provider_message_id", providerMessageId)
+    .eq("direction", "outbound")
+    .limit(1)
+    .returns<MessageRow[]>();
+
+  if (messageLookupError) {
+    throw messageLookupError;
+  }
+
+  const message = messages?.[0];
+  if (!message) {
+    return {
+      attemptStatus: "ignored" as const,
+      providerEventStatus: "ignored" as const,
+      result: {
+        processor: "telnyx_outbound_status",
+        outcome: "message_not_found",
+        provider: providerEvent.provider,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+      },
+    };
+  }
+
+  const metadata = isObject(message.metadata) ? message.metadata : {};
+  const update: Record<string, unknown> = {
+    status: messageStatus,
+    metadata: {
+      ...metadata,
+      telnyx_status: {
+        provider_event_id: providerEvent.id,
+        event_type: providerEvent.event_type,
+        provider_message_id: providerMessageId,
+        processed_at: finishedAt,
+      },
+    },
+  };
+
+  if (messageStatus === "sent" && !message.sent_at) {
+    update.sent_at = finishedAt;
+  }
+
+  const { data: updatedMessage, error: updateMessageError } = await supabaseAdmin
+    .from("messages")
+    .update(update)
+    .eq("id", message.id)
+    .select("id, status, sent_at, metadata")
+    .single<MessageRow>();
+
+  if (updateMessageError || !updatedMessage) {
+    throw updateMessageError ?? new Error("Message status update failed");
+  }
+
+  return {
+    attemptStatus: "succeeded" as const,
+    providerEventStatus: "processed" as const,
+    result: {
+      processor: "telnyx_outbound_status",
+      outcome: "message_status_updated",
+      provider: providerEvent.provider,
+      event_type: providerEvent.event_type,
+      provider_message_id: providerMessageId,
+      message: {
+        id: updatedMessage.id,
+        status: updatedMessage.status,
+      },
+    },
+  };
+}
+
 function summarizeMapping(mapping: ProviderMapping) {
   return {
     id: mapping.id,
@@ -492,17 +636,25 @@ Deno.serve(async (req: Request) =>
           );
         }
 
-        const finishedAt = new Date().toISOString();
-        const result = classifySkeleton(providerEvent);
-
         try {
+          const finishedAt = new Date().toISOString();
+          const telnyxStatusResult = await processTelnyxOutboundStatus(
+            providerEvent,
+            finishedAt,
+          );
+          const processorResult = telnyxStatusResult ?? {
+            attemptStatus: "ignored" as const,
+            providerEventStatus: "ignored" as const,
+            result: classifySkeleton(providerEvent),
+          };
+
           const { data: updatedAttempt, error: updateAttemptError } =
             await supabaseAdmin
               .from("provider_event_processing_attempts")
               .update({
-                status: "ignored",
+                status: processorResult.attemptStatus,
                 finished_at: finishedAt,
-                result,
+                result: processorResult.result,
               })
               .eq("id", attempt.id)
               .select(
@@ -518,7 +670,7 @@ Deno.serve(async (req: Request) =>
             await supabaseAdmin
               .from("provider_events")
               .update({
-                processing_status: "ignored",
+                processing_status: processorResult.providerEventStatus,
                 processed_at: finishedAt,
                 error_message: null,
               })
@@ -533,7 +685,7 @@ Deno.serve(async (req: Request) =>
           }
 
           return jsonResponse({
-            status: "ignored",
+            status: processorResult.providerEventStatus,
             provider_event: updatedProviderEvent,
             attempt: updatedAttempt,
             auto_mapping: autoMapping,
