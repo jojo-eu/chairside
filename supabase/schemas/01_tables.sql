@@ -503,6 +503,7 @@ create index messages_patient_id_idx on public.messages using btree (patient_id)
 create index messages_appointment_id_idx on public.messages using btree (appointment_id);
 create index messages_reminder_id_idx on public.messages using btree (reminder_id);
 create index messages_provider_message_id_idx on public.messages using btree (provider_message_id);
+create unique index messages_provider_message_unique_idx on public.messages using btree (provider, provider_message_id, direction) where (provider_message_id is not null);
 create index opt_outs_clinic_id_idx on public.opt_outs using btree (clinic_id);
 create index opt_outs_patient_id_idx on public.opt_outs using btree (patient_id);
 create index call_logs_clinic_started_at_idx on public.call_logs using btree (clinic_id, started_at desc);
