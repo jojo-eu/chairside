@@ -186,3 +186,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.process-provider-event]
 verify_jwt = false
+[functions.lookup-provider-mapping]
+verify_jwt = false
