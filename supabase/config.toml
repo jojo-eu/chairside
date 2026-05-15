@@ -188,3 +188,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.lookup-provider-mapping]
 verify_jwt = false
+[functions.map-provider-event-clinic]
+verify_jwt = false
