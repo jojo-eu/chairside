@@ -290,6 +290,8 @@ export const InboundResponsesPage = () => {
               <TableHead>Predošlý stav</TableHead>
               <TableHead>Repeat outcome</TableHead>
               <TableHead>Review</TableHead>
+              <TableHead>Staff status</TableHead>
+              <TableHead>Staff outcome</TableHead>
               <TableHead>Matched outbound</TableHead>
               <TableHead>Reminder</TableHead>
               <TableHead>Patient</TableHead>
@@ -301,13 +303,13 @@ export const InboundResponsesPage = () => {
           <TableBody data-testid="inbound-responses-table">
             {loading ? (
               <TableRow>
-                <TableCell colSpan={17} className="text-muted-foreground">
+                <TableCell colSpan={19} className="text-muted-foreground">
                   Načítavam inbound odpovede...
                 </TableCell>
               </TableRow>
             ) : visibleMessages.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={17} className="text-muted-foreground">
+                <TableCell colSpan={19} className="text-muted-foreground">
                   {showOnlyReview
                     ? "Žiadne inbound odpovede vyžadujúce review nie sú viditeľné pre aktuálne prihlásenie."
                     : "Žiadne inbound odpovede naviazané na pripomienky nie sú viditeľné pre aktuálne prihlásenie."}
@@ -337,6 +339,34 @@ export const InboundResponsesPage = () => {
                 const matchedOutbound = getMetadataString(
                   message.metadata,
                   "matched_outbound_message_id",
+                );
+                const staffReviewStatus = getMetadataString(
+                  message.metadata,
+                  "staff_review_status",
+                );
+                const staffReviewOutcome = getMetadataString(
+                  message.metadata,
+                  "staff_review_outcome",
+                );
+                const staffReviewedAt = getMetadataString(
+                  message.metadata,
+                  "staff_reviewed_at",
+                );
+                const staffReviewedBy = getMetadataString(
+                  message.metadata,
+                  "staff_reviewed_by",
+                );
+                const staffReviewNote = getMetadataString(
+                  message.metadata,
+                  "staff_review_note",
+                );
+                const previousReminderResponseStatus = getMetadataString(
+                  message.metadata,
+                  "previous_reminder_response_status",
+                );
+                const newReminderResponseStatus = getMetadataString(
+                  message.metadata,
+                  "new_reminder_response_status",
                 );
 
                 return (
@@ -392,6 +422,16 @@ export const InboundResponsesPage = () => {
                           <Badge variant="outline">Nie</Badge>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {staffReviewStatus ?? "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {staffReviewOutcome ?? "-"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="max-w-52 whitespace-normal break-all font-mono text-xs">
                         {matchedOutbound ?? "-"}
                       </TableCell>
@@ -415,7 +455,7 @@ export const InboundResponsesPage = () => {
                     </TableRow>
                     {selectedMessageId === message.id ? (
                       <TableRow data-testid="inbound-response-detail-row">
-                        <TableCell colSpan={17} className="bg-muted/20 p-4">
+                        <TableCell colSpan={19} className="bg-muted/20 p-4">
                           <div
                             className="space-y-4 rounded-lg border bg-background p-4"
                             data-testid="inbound-response-detail"
@@ -490,6 +530,22 @@ export const InboundResponsesPage = () => {
                                 [
                                   "matched_outbound_message_id",
                                   matchedOutbound,
+                                ],
+                                ["staff_review_status", staffReviewStatus],
+                                ["staff_review_outcome", staffReviewOutcome],
+                                [
+                                  "staff_reviewed_at",
+                                  formatDate(staffReviewedAt),
+                                ],
+                                ["staff_reviewed_by", staffReviewedBy],
+                                ["staff_review_note", staffReviewNote],
+                                [
+                                  "previous_reminder_response_status",
+                                  previousReminderResponseStatus,
+                                ],
+                                [
+                                  "new_reminder_response_status",
+                                  newReminderResponseStatus,
                                 ],
                                 ["reminder_id", message.reminder_id],
                                 ["patient_id", message.patient_id],
