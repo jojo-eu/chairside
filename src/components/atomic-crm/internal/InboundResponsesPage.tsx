@@ -49,6 +49,15 @@ type InboundResponseContext = {
   } | null;
 };
 
+type StaffReviewRpcResult = {
+  status?: string;
+};
+
+type ActionMessage = {
+  kind: "success" | "info" | "warning" | "error";
+  text: string;
+} | null;
+
 const dateFormatter = new Intl.DateTimeFormat("sk-SK", {
   dateStyle: "short",
   timeStyle: "medium",
@@ -82,6 +91,21 @@ const requiresStaffReview = (message: InboundResponseMessage) =>
   getMetadataBoolean(message.metadata, "needs_staff_review") === true &&
   getMetadataString(message.metadata, "staff_review_status") !== "resolved";
 
+const getActionMessageClassName = (
+  kind: NonNullable<ActionMessage>["kind"],
+) => {
+  switch (kind) {
+    case "success":
+      return "border-emerald-200 bg-emerald-50 text-emerald-950";
+    case "info":
+      return "border-sky-200 bg-sky-50 text-sky-950";
+    case "warning":
+      return "border-amber-200 bg-amber-50 text-amber-950";
+    case "error":
+      return "border-destructive/30 bg-destructive/10 text-destructive";
+  }
+};
+
 export const InboundResponsesPage = () => {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [messages, setMessages] = useState<InboundResponseMessage[]>([]);
@@ -95,6 +119,10 @@ export const InboundResponsesPage = () => {
   const [detailContextError, setDetailContextError] = useState<string | null>(
     null,
   );
+  const [resolvingMessageId, setResolvingMessageId] = useState<string | null>(
+    null,
+  );
+  const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -220,6 +248,63 @@ export const InboundResponsesPage = () => {
     };
   }, [selectedMessage, selectedMessageId, supabase]);
 
+  const handleKeepExistingReview = async (message: InboundResponseMessage) => {
+    setActionMessage(null);
+    setResolvingMessageId(message.id);
+
+    const { data, error: rpcError } = await supabase.rpc(
+      "resolve_inbound_response_keep_existing",
+      {
+        p_inbound_message_id: message.id,
+        p_expected_current_reminder_response_status:
+          detailContext?.reminder?.response_status ?? null,
+        p_staff_review_note: null,
+      },
+    );
+
+    if (rpcError) {
+      setActionMessage({
+        kind: "error",
+        text: `Review sa nepodarilo vyriešiť: ${rpcError.message}`,
+      });
+      setResolvingMessageId(null);
+      return;
+    }
+
+    const result = data as StaffReviewRpcResult | null;
+    const status = result?.status;
+
+    if (status === "resolved") {
+      setActionMessage({
+        kind: "success",
+        text: "Review bolo vyriešené: ponechaný existujúci stav pripomienky.",
+      });
+    } else if (status === "already_resolved") {
+      setActionMessage({
+        kind: "info",
+        text: "Review už bolo vyriešené. Zoznam bol obnovený.",
+      });
+    } else if (status === "stale_reminder_state") {
+      setActionMessage({
+        kind: "warning",
+        text: "Stav pripomienky sa medzitým zmenil. Zoznam bol obnovený.",
+      });
+    } else if (status === "not_found") {
+      setActionMessage({
+        kind: "error",
+        text: "Inbound odpoveď alebo pripomienka nebola nájdená pre aktuálne prihlásenie.",
+      });
+    } else {
+      setActionMessage({
+        kind: "warning",
+        text: `RPC vrátilo neočakávaný stav: ${status ?? "unknown"}.`,
+      });
+    }
+
+    await loadMessages();
+    setResolvingMessageId(null);
+  };
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -278,6 +363,17 @@ export const InboundResponsesPage = () => {
           className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
         >
           {error}
+        </div>
+      ) : null}
+
+      {actionMessage ? (
+        <div
+          role={actionMessage.kind === "error" ? "alert" : "status"}
+          className={`rounded-lg border p-3 text-sm ${getActionMessageClassName(
+            actionMessage.kind,
+          )}`}
+        >
+          {actionMessage.text}
         </div>
       ) : null}
 
@@ -474,8 +570,9 @@ export const InboundResponsesPage = () => {
                                   Detail inbound odpovede
                                 </h2>
                                 <p className="text-sm text-muted-foreground">
-                                  Staff resolution actions are not implemented
-                                  yet.
+                                  Dostupná je iba akcia ponechať existujúci
+                                  stav. Accept/update reminder akcie zatiaľ nie
+                                  sú implementované.
                                 </p>
                               </div>
                               {requiresReview ? (
@@ -490,6 +587,34 @@ export const InboundResponsesPage = () => {
                                 <Badge variant="outline">Bez review</Badge>
                               )}
                             </div>
+
+                            {requiresReview ? (
+                              <div className="rounded-lg border bg-muted/20 p-3">
+                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                  <div className="text-sm text-muted-foreground">
+                                    Táto akcia zavolá RPC a ponechá aktuálny
+                                    `reminder.response_status` bez priameho
+                                    zápisu z UI.
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                      void handleKeepExistingReview(message)
+                                    }
+                                    disabled={
+                                      resolvingMessageId === message.id ||
+                                      detailContextLoading ||
+                                      !detailContext?.reminder
+                                    }
+                                  >
+                                    {resolvingMessageId === message.id
+                                      ? "Ukladám..."
+                                      : "Ponechať existujúci stav"}
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : null}
 
                             <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
                               {[
