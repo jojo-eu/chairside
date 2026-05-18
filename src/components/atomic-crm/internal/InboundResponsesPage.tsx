@@ -91,6 +91,9 @@ const requiresStaffReview = (message: InboundResponseMessage) =>
   getMetadataBoolean(message.metadata, "needs_staff_review") === true &&
   getMetadataString(message.metadata, "staff_review_status") !== "resolved";
 
+const isAllowedParsedResponse = (value: string | null) =>
+  value === "confirmed" || value === "declined" || value === "needs_review";
+
 const getActionMessageClassName = (
   kind: NonNullable<ActionMessage>["kind"],
 ) => {
@@ -305,6 +308,75 @@ export const InboundResponsesPage = () => {
     setResolvingMessageId(null);
   };
 
+  const handleAcceptInboundResponse = async (
+    message: InboundResponseMessage,
+  ) => {
+    setActionMessage(null);
+    setResolvingMessageId(message.id);
+
+    const { data, error: rpcError } = await supabase.rpc(
+      "resolve_inbound_response_accept_inbound",
+      {
+        p_inbound_message_id: message.id,
+        p_expected_current_reminder_response_status:
+          detailContext?.reminder?.response_status ?? null,
+        p_staff_review_note: null,
+      },
+    );
+
+    if (rpcError) {
+      setActionMessage({
+        kind: "error",
+        text: `Odpoveď zo SMS sa nepodarilo prijať: ${rpcError.message}`,
+      });
+      setResolvingMessageId(null);
+      return;
+    }
+
+    const result = data as StaffReviewRpcResult | null;
+    const status = result?.status;
+
+    if (status === "resolved") {
+      setActionMessage({
+        kind: "success",
+        text: "Odpoveď zo SMS bola prijatá a stav pripomienky bol aktualizovaný.",
+      });
+    } else if (status === "already_resolved") {
+      setActionMessage({
+        kind: "info",
+        text: "Review už bolo vyriešené. Zoznam bol obnovený.",
+      });
+    } else if (status === "stale_reminder_state") {
+      setActionMessage({
+        kind: "warning",
+        text: "Stav pripomienky sa medzitým zmenil. Zoznam bol obnovený.",
+      });
+    } else if (status === "invalid_parsed_response") {
+      setActionMessage({
+        kind: "warning",
+        text: "Parsed response nie je podporovaný pre prijatie odpovede.",
+      });
+    } else if (status === "cancelled_reminder") {
+      setActionMessage({
+        kind: "warning",
+        text: "Pripomienka je zrušená, preto sa odpoveď zo SMS neprijala.",
+      });
+    } else if (status === "not_found") {
+      setActionMessage({
+        kind: "error",
+        text: "Inbound odpoveď alebo pripomienka nebola nájdená pre aktuálne prihlásenie.",
+      });
+    } else {
+      setActionMessage({
+        kind: "warning",
+        text: `RPC vrátilo neočakávaný stav: ${status ?? "unknown"}.`,
+      });
+    }
+
+    await loadMessages();
+    setResolvingMessageId(null);
+  };
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -423,6 +495,9 @@ export const InboundResponsesPage = () => {
                   message.metadata,
                   "parsed_response",
                 );
+                const canAcceptInboundResponse =
+                  isAllowedParsedResponse(parsedResponse) &&
+                  detailContext?.reminder?.response_status != null;
                 const repeatResponse = getMetadataBoolean(
                   message.metadata,
                   "repeat_response",
@@ -590,28 +665,55 @@ export const InboundResponsesPage = () => {
 
                             {requiresReview ? (
                               <div className="rounded-lg border bg-muted/20 p-3">
-                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                                  <div className="text-sm text-muted-foreground">
-                                    Táto akcia zavolá RPC a ponechá aktuálny
-                                    `reminder.response_status` bez priameho
-                                    zápisu z UI.
+                                <div className="space-y-3">
+                                  <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                                    Akcia <strong>Prijať odpoveď zo SMS</strong>{" "}
+                                    zmení <code>reminder.response_status</code>{" "}
+                                    na <code>{parsedResponse ?? "-"}</code>.
+                                    Neposiela SMS a neaktualizuje termín.
                                   </div>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                      void handleKeepExistingReview(message)
-                                    }
-                                    disabled={
-                                      resolvingMessageId === message.id ||
-                                      detailContextLoading ||
-                                      !detailContext?.reminder
-                                    }
-                                  >
-                                    {resolvingMessageId === message.id
-                                      ? "Ukladám..."
-                                      : "Ponechať existujúci stav"}
-                                  </Button>
+                                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                    <div className="text-sm text-muted-foreground">
+                                      Obe akcie volajú RPC. UI nerobí priamy
+                                      update správ ani pripomienok.
+                                    </div>
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                          void handleKeepExistingReview(message)
+                                        }
+                                        disabled={
+                                          resolvingMessageId === message.id ||
+                                          detailContextLoading ||
+                                          !detailContext?.reminder
+                                        }
+                                      >
+                                        {resolvingMessageId === message.id
+                                          ? "Ukladám..."
+                                          : "Ponechať existujúci stav"}
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                          void handleAcceptInboundResponse(
+                                            message,
+                                          )
+                                        }
+                                        disabled={
+                                          resolvingMessageId === message.id ||
+                                          detailContextLoading ||
+                                          !canAcceptInboundResponse
+                                        }
+                                      >
+                                        {resolvingMessageId === message.id
+                                          ? "Ukladám..."
+                                          : "Prijať odpoveď zo SMS"}
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ) : null}
