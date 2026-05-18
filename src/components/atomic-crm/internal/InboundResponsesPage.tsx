@@ -645,9 +645,9 @@ export const InboundResponsesPage = () => {
                                   Detail inbound odpovede
                                 </h2>
                                 <p className="text-sm text-muted-foreground">
-                                  Dostupná je iba akcia ponechať existujúci
-                                  stav. Accept/update reminder akcie zatiaľ nie
-                                  sú implementované.
+                                  Staff review akcie sú dostupné iba pre
+                                  nevyriešené review riadky. Termíny, providerov
+                                  ani SMS odpovede táto stránka nemení.
                                 </p>
                               </div>
                               {requiresReview ? (
@@ -664,20 +664,45 @@ export const InboundResponsesPage = () => {
                             </div>
 
                             {requiresReview ? (
-                              <div className="rounded-lg border bg-muted/20 p-3">
-                                <div className="space-y-3">
-                                  <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-                                    Akcia <strong>Prijať odpoveď zo SMS</strong>{" "}
-                                    zmení <code>reminder.response_status</code>{" "}
-                                    na <code>{parsedResponse ?? "-"}</code>.
-                                    Neposiela SMS a neaktualizuje termín.
-                                  </div>
-                                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                                    <div className="text-sm text-muted-foreground">
-                                      Obe akcie volajú RPC. UI nerobí priamy
-                                      update správ ani pripomienok.
+                              <div className="rounded-lg border-2 border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+                                <div className="mb-3 space-y-1">
+                                  <h3 className="text-sm font-semibold text-amber-950">
+                                    Staff review akcie
+                                  </h3>
+                                  <p className="text-sm text-amber-950/80">
+                                    Obe akcie volajú RPC. UI nerobí priamy
+                                    update správ ani pripomienok.
+                                  </p>
+                                </div>
+
+                                <div className="grid gap-3">
+                                  <section className="flex flex-col justify-between gap-4 rounded-lg border bg-background p-4">
+                                    <div className="space-y-3">
+                                      <Badge variant="outline">
+                                        Bezpečná voľba
+                                      </Badge>
+                                      <div className="space-y-1">
+                                        <h4 className="text-base font-semibold">
+                                          Ponechať existujúci stav
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          Ponechá aktuálny{" "}
+                                          <code>reminder.response_status</code>{" "}
+                                          bez zmeny a označí review ako
+                                          vyriešené.
+                                        </p>
+                                      </div>
+                                      <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                        <span className="font-medium text-muted-foreground">
+                                          Aktuálny stav:{" "}
+                                        </span>
+                                        <code>
+                                          {detailContext?.reminder
+                                            ?.response_status ?? "-"}
+                                        </code>
+                                      </div>
                                     </div>
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    <div>
                                       <Button
                                         type="button"
                                         variant="outline"
@@ -694,9 +719,49 @@ export const InboundResponsesPage = () => {
                                           ? "Ukladám..."
                                           : "Ponechať existujúci stav"}
                                       </Button>
+                                    </div>
+                                  </section>
+
+                                  <section className="flex flex-col justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+                                    <div className="space-y-3">
+                                      <Badge variant="destructive">
+                                        Mení stav pripomienky
+                                      </Badge>
+                                      <div className="space-y-1">
+                                        <h4 className="text-base font-semibold text-amber-950">
+                                          Prijať odpoveď zo SMS
+                                        </h4>
+                                        <p className="text-sm text-amber-950/80">
+                                          Zmení{" "}
+                                          <code>reminder.response_status</code>{" "}
+                                          na <code>parsed_response</code>.
+                                          Neposiela SMS a neaktualizuje termín.
+                                        </p>
+                                      </div>
+                                      <div className="grid gap-2 text-xs">
+                                        <div className="min-w-0 rounded-md bg-background/80 p-2">
+                                          <div className="font-medium uppercase text-muted-foreground">
+                                            Aktuálny stav
+                                          </div>
+                                          <code className="break-all">
+                                            {detailContext?.reminder
+                                              ?.response_status ?? "-"}
+                                          </code>
+                                        </div>
+                                        <div className="min-w-0 rounded-md bg-background/80 p-2">
+                                          <div className="font-medium uppercase text-muted-foreground">
+                                            parsed_response target
+                                          </div>
+                                          <code className="break-all">
+                                            {parsedResponse ?? "-"}
+                                          </code>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div>
                                       <Button
                                         type="button"
-                                        variant="outline"
+                                        variant="destructive"
                                         onClick={() =>
                                           void handleAcceptInboundResponse(
                                             message,
@@ -713,7 +778,7 @@ export const InboundResponsesPage = () => {
                                           : "Prijať odpoveď zo SMS"}
                                       </Button>
                                     </div>
-                                  </div>
+                                  </section>
                                 </div>
                               </div>
                             ) : null}
