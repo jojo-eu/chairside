@@ -74,6 +74,14 @@ const getMetadataBoolean = (metadata: MessageMetadata, key: string) => {
 const getMetadataPreview = (metadata: MessageMetadata) =>
   JSON.stringify(metadata ?? {}, null, 2);
 
+const isStaffReviewResolved = (message: InboundResponseMessage) =>
+  getMetadataBoolean(message.metadata, "needs_staff_review") === true &&
+  getMetadataString(message.metadata, "staff_review_status") === "resolved";
+
+const requiresStaffReview = (message: InboundResponseMessage) =>
+  getMetadataBoolean(message.metadata, "needs_staff_review") === true &&
+  getMetadataString(message.metadata, "staff_review_status") !== "resolved";
+
 export const InboundResponsesPage = () => {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [messages, setMessages] = useState<InboundResponseMessage[]>([]);
@@ -121,15 +129,10 @@ export const InboundResponsesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const reviewRowsCount = messages.filter(
-    (message) =>
-      getMetadataBoolean(message.metadata, "needs_staff_review") === true,
-  ).length;
+  const reviewRowsCount = messages.filter(requiresStaffReview).length;
+  const resolvedReviewRowsCount = messages.filter(isStaffReviewResolved).length;
   const visibleMessages = showOnlyReview
-    ? messages.filter(
-        (message) =>
-          getMetadataBoolean(message.metadata, "needs_staff_review") === true,
-      )
+    ? messages.filter(requiresStaffReview)
     : messages;
   const selectedMessage =
     visibleMessages.find((message) => message.id === selectedMessageId) ?? null;
@@ -262,6 +265,9 @@ export const InboundResponsesPage = () => {
         <div className="flex flex-wrap gap-2 text-muted-foreground">
           <Badge variant="outline">Načítané: {messages.length}</Badge>
           <Badge variant="outline">Vyžaduje review: {reviewRowsCount}</Badge>
+          <Badge variant="outline">
+            Vyriešené review: {resolvedReviewRowsCount}
+          </Badge>
           <Badge variant="outline">Zobrazené: {visibleMessages.length}</Badge>
         </div>
       </div>
@@ -336,6 +342,8 @@ export const InboundResponsesPage = () => {
                 const needsStaffReview =
                   getMetadataBoolean(message.metadata, "needs_staff_review") ??
                   false;
+                const reviewResolved = isStaffReviewResolved(message);
+                const requiresReview = requiresStaffReview(message);
                 const matchedOutbound = getMetadataString(
                   message.metadata,
                   "matched_outbound_message_id",
@@ -373,9 +381,7 @@ export const InboundResponsesPage = () => {
                   <Fragment key={message.id}>
                     <TableRow
                       data-testid="inbound-response-row"
-                      className={
-                        needsStaffReview ? "bg-amber-50/60" : undefined
-                      }
+                      className={requiresReview ? "bg-amber-50/60" : undefined}
                     >
                       <TableCell>
                         <Button
@@ -416,8 +422,10 @@ export const InboundResponsesPage = () => {
                       <TableCell>{previousResponseStatus ?? "-"}</TableCell>
                       <TableCell>{repeatOutcome ?? "-"}</TableCell>
                       <TableCell>
-                        {needsStaffReview ? (
+                        {requiresReview ? (
                           <Badge variant="destructive">Vyžaduje review</Badge>
+                        ) : reviewResolved ? (
+                          <Badge variant="secondary">Vyriešené review</Badge>
                         ) : (
                           <Badge variant="outline">Nie</Badge>
                         )}
@@ -470,9 +478,13 @@ export const InboundResponsesPage = () => {
                                   yet.
                                 </p>
                               </div>
-                              {needsStaffReview ? (
+                              {requiresReview ? (
                                 <Badge variant="destructive">
                                   Vyžaduje review
+                                </Badge>
+                              ) : reviewResolved ? (
+                                <Badge variant="secondary">
+                                  Vyriešené review
                                 </Badge>
                               ) : (
                                 <Badge variant="outline">Bez review</Badge>
