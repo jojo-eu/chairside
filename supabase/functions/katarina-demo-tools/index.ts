@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { AuthMiddleware } from "../_shared/authentication.ts";
 import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 
@@ -50,6 +49,10 @@ function cleanText(value: unknown) {
 
 function isToolName(value: string): value is ToolName {
   return tools.includes(value as ToolName);
+}
+
+function hasListAvailableSlotsArgument(value: JsonObject) {
+  return "reason" in value || "patient_id" in value || "clinic_id" in value;
 }
 
 function addDays(date: Date, days: number) {
@@ -104,11 +107,20 @@ function createDemoSlots(): Slot[] {
 
 async function handleLookupPatientByPhone(args: JsonObject, req: Request) {
   const phone = cleanText(args.phone);
+  const authorization = req.headers.get("Authorization") ?? "";
 
   if (!phone) {
     return createErrorResponse(400, "Missing phone", {
       ok: false,
       error: "missing_phone",
+    });
+  }
+
+  if (!authorization) {
+    return createErrorResponse(401, "Missing authorization header", {
+      ok: false,
+      error: "missing_authorization",
+      demo_mode: true,
     });
   }
 
@@ -118,7 +130,7 @@ async function handleLookupPatientByPhone(args: JsonObject, req: Request) {
     {
       global: {
         headers: {
-          Authorization: req.headers.get("Authorization") ?? "",
+          Authorization: authorization,
         },
       },
     },
@@ -155,7 +167,7 @@ async function handleLookupPatientByPhone(args: JsonObject, req: Request) {
   });
 }
 
-function handleListAvailableSlots(args: JsonObject) {
+function handleListAvailableSlots(args: JsonObject, metadata: JsonObject = {}) {
   const clinicId = cleanText(args.clinic_id) || null;
   const patientId = cleanText(args.patient_id) || null;
   const reason = cleanText(args.reason) || "preventive_checkup";
@@ -171,6 +183,7 @@ function handleListAvailableSlots(args: JsonObject) {
     metadata: {
       demo_mode: true,
       source: "deterministic_demo_slots",
+      ...metadata,
     },
   });
 }
@@ -259,56 +272,94 @@ function handleRecordReminderResponse(args: JsonObject) {
 }
 
 Deno.serve(async (req: Request) =>
-  OptionsMiddleware(req, async (req) =>
-    AuthMiddleware(req, async (req) => {
+  OptionsMiddleware(req, async (req) => {
+    try {
+      if (req.method !== "POST") {
+        return createErrorResponse(405, "Method Not Allowed");
+      }
+
+      let payload: DemoToolRequest;
+      let emptyBodyFallback = false;
+      let directPayloadFallback = false;
+      let unknownObjectFallback = false;
       try {
-        if (req.method !== "POST") {
-          return createErrorResponse(405, "Method Not Allowed");
+        const body = await req.text();
+        if (body.trim() === "") {
+          payload = {
+            tool: "list_available_slots",
+            arguments: {
+              reason: "preventive_checkup",
+            },
+          };
+          emptyBodyFallback = true;
+        } else {
+          const parsedBody = JSON.parse(body);
+          if (
+            isObject(parsedBody) &&
+            !("tool" in parsedBody) &&
+            hasListAvailableSlotsArgument(parsedBody)
+          ) {
+            payload = {
+              tool: "list_available_slots",
+              arguments: parsedBody,
+            };
+            directPayloadFallback = true;
+          } else {
+            payload = parsedBody;
+          }
         }
+      } catch {
+        return createErrorResponse(400, "Invalid JSON body", {
+          ok: false,
+          error: "invalid_json",
+        });
+      }
 
-        let payload: DemoToolRequest;
-        try {
-          payload = await req.json();
-        } catch {
-          return createErrorResponse(400, "Invalid JSON body", {
-            ok: false,
-            error: "invalid_json",
-          });
-        }
-
-        const tool = cleanText(payload.tool);
-        if (!isToolName(tool)) {
+      let tool = cleanText(payload.tool);
+      if (!isToolName(tool)) {
+        if (isObject(payload) && tool !== "unknown_tool") {
+          payload = {
+            tool: "list_available_slots",
+            arguments: payload,
+          };
+          tool = "list_available_slots";
+          unknownObjectFallback = true;
+        } else {
           return createErrorResponse(400, "Unsupported tool", {
             ok: false,
             error: "unsupported_tool",
             allowed_tools: tools,
           });
         }
+      }
 
-        if (!isObject(payload.arguments)) {
-          return createErrorResponse(400, "Missing or invalid arguments", {
-            ok: false,
-            error: "invalid_arguments",
-          });
-        }
-
-        switch (tool) {
-          case "lookup_patient_by_phone":
-            return await handleLookupPatientByPhone(payload.arguments, req);
-          case "list_available_slots":
-            return handleListAvailableSlots(payload.arguments);
-          case "create_demo_appointment":
-            return handleCreateDemoAppointment(payload.arguments);
-          case "record_reminder_response":
-            return handleRecordReminderResponse(payload.arguments);
-        }
-      } catch (error) {
-        console.error("Unexpected Katarina demo tools error:", error);
-        return createErrorResponse(500, "Unexpected error", {
+      if (!isObject(payload.arguments)) {
+        return createErrorResponse(400, "Missing or invalid arguments", {
           ok: false,
-          error: "unexpected_error",
+          error: "invalid_arguments",
         });
       }
-    }),
-  ),
+
+      switch (tool) {
+        case "lookup_patient_by_phone":
+          return await handleLookupPatientByPhone(payload.arguments, req);
+        case "list_available_slots":
+          return handleListAvailableSlots(payload.arguments, {
+            ...(emptyBodyFallback ? { empty_body_fallback: true } : {}),
+            ...(directPayloadFallback ? { direct_payload_fallback: true } : {}),
+            ...(unknownObjectFallback ? { unknown_object_fallback: true } : {}),
+          });
+        case "create_demo_appointment":
+          return handleCreateDemoAppointment(payload.arguments);
+        case "record_reminder_response":
+          return handleRecordReminderResponse(payload.arguments);
+      }
+    } catch (error) {
+      console.error("Unexpected Katarina demo tools error:", error);
+      return createErrorResponse(500, "Unexpected error", {
+        ok: false,
+        error: "unexpected_error",
+      });
+    }
+  }),
 );
